@@ -1,0 +1,3221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9+1 Statistique</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (pour les graphiques) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- NOUVEAU: Chart.js Datalabels Plugin (pour les %) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <!-- SheetJS (xlsx) (pour lire et exporter les fichiers Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <style>
+        /* Définition des couleurs principales comme variables CSS */
+        :root {
+            --color-primary: #E56A54;
+            --color-secondary: #00594E;
+        }
+
+        /* ... (Styles CSS personnalisés, .btn-base, .btn-primary, etc. inchangés) ... */
+        /* Début des styles CSS (inchangés) */
+        .bg-primary { background-color: var(--color-primary); }
+        .text-primary { color: var(--color-primary); }
+        .bg-secondary { background-color: var(--color-secondary); }
+        .text-secondary { color: var(--color-secondary); }
+        .border-primary { border-color: var(--color-primary); }
+        .border-secondary { border-color: var(--color-secondary); }
+        .ring-primary { ring-color: var(--color-primary); }
+        .ring-secondary { ring-color: var(--color-secondary); }
+        .nav-link-active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .filter-scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .filter-scrollbar-hide {
+            scrollbar-width: none; /* Firefox */
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .btn-base {
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 600; /* font-semibold */
+            display: inline-flex; /* flex (inline-flex est mieux pour les boutons) */
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent; /* Bordure transparente pour la cohérence de taille */
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+            cursor: pointer;
+        }
+        .btn-base:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* hover:shadow-lg */
+            transform: translateY(-1px); /* hover:-translate-y-px */
+        }
+        .btn-base:focus-visible { /* Utilisation de focus-visible pour une meilleure accessibilité */
+            outline: 2px solid var(--ring-color, #9ca3af); /* focus:ring-2 */
+            outline-offset: 2px; /* focus:ring-offset-2 */
+        }
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            --ring-color: var(--color-primary); /* pour l'anneau de focus */
+        }
+        .btn-primary:hover {
+            filter: brightness(0.9);
+        }
+        .btn-secondary {
+            background-color: var(--color-secondary);
+            color: white;
+            --ring-color: var(--color-secondary);
+        }
+        .btn-secondary:hover {
+            filter: brightness(0.9);
+        }
+        .btn-warning {
+            background-color: #f59e0b; /* bg-yellow-500 */
+            color: white;
+            --ring-color: #f59e0b;
+        }
+        .btn-warning:hover {
+             background-color: #d97706; /* hover:bg-yellow-600 */
+        }
+        .btn-gray {
+            background-color: transparent;
+            border: 2px solid #94a3b8; /* border-2 border-slate-400 */
+            color: #475569; /* text-slate-600 */
+            box-shadow: none;
+            --ring-color: #94a3b8;
+        }
+        .btn-gray:hover {
+            background-color: #f1f5f9; /* hover:bg-slate-100 */
+            border-color: #64748b; /* hover:border-slate-500 */
+            transform: none; /* hover:-translate-y-0 */
+            box-shadow: none; /* hover:shadow-none */
+        }
+        .btn-danger {
+            background-color: #dc2626; /* bg-red-600 */
+            color: white;
+            --ring-color: #dc2626;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* hover:bg-red-700 */
+        }
+        .btn-danger:disabled {
+            background-color: #fca5a5; /* bg-red-300 */
+            color: #fef2f2; /* text-red-50 */
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            filter: none;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb; /* bg-gray-200 */
+            border-radius: 9999px; /* rounded-full */
+            height: 1.25rem; /* h-5 */
+            overflow: hidden;
+            border: 1px solid #d1d5db; /* border border-gray-300 */
+        }
+        .progress-bar {
+            background-color: var(--color-secondary);
+            height: 100%;
+            width: 0%; /* Commence à 0 */
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+            text-align: center;
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            line-height: 1.25rem; /* Correspond à h-5 */
+        }
+        .dot-pulse {
+            display: inline-block;
+            animation: dot-pulse 1.4s infinite ease-in-out;
+            animation-delay: 0.2s;
+        }
+        .dot-pulse::before, .dot-pulse::after {
+            content: '.';
+            display: inline-block;
+            animation: dot-pulse 1.4s infinite ease-in-out;
+        }
+        .dot-pulse::before { animation-delay: 0s; }
+        .dot-pulse::after { animation-delay: 0.4s; }
+        
+        @keyframes dot-pulse {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+        
+        /* NOUVEAU: Style pour le texte cliquable de l'IA */
+        .ai-filter-trigger {
+            color: #dc2626; /* text-red-600 */
+            font-weight: 700; /* font-bold */
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .ai-filter-trigger:hover {
+            color: #b91c1c; /* text-red-700 */
+        }
+        
+        /* Fin des styles CSS (inchangés) */
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans"> <!-- FOND LUMINEUX -->
+
+    <!-- SUPPRIMÉ: Panneau latéral des filtres (caché par défaut) -->
+    
+    <!-- Navbar (inchangée) -->
+    <nav style="background-color: var(--color-secondary);" class="sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo/Titre à gauche -->
+                <div class="flex-shrink-0">
+                    <span class="text-white text-xl font-bold">9+1 Statistique</span>
+                </div>
+                
+                <!-- Menu de navigation (Desktop) -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" id="nav-accueil" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Accueil</a>
+                        <a href="#" id="nav-admin" class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Admin</a>
+                    </div>
+                </div>
+
+                <!-- Bouton Menu Hamburger (Mobile) -->
+                <div class="-mr-2 flex md:hidden">
+                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Ouvrir le menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-4 6h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu mobile (se déploie) -->
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#" id="nav-mobile-accueil" class="nav-link-mobile text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Accueil</a>
+                <a href="#" id="nav-mobile-admin" class="nav-link-mobile text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu de la page (dynamique) -->
+    <main>
+        <!-- MODIFIÉ: Rétablissement de max-w-7xl et des paddings px -->
+        <div id="page-content" class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <!-- Le contenu des pages (Accueil ou Admin) sera injecté ici -->
+            <div class="p-8 text-center"><p class="text-lg">Chargement de l'application...</p></div>
+        </div>
+    </main>
+
+    <!-- ... (Toutes les modales : chargement, doublons, erreur, export, reset, aperçu... sont inchangées) ... -->
+    <!-- Popup/Modal de chargement -->
+    <div id="loading-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop"> <!-- z-index augmenté -->
+        <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center space-y-4 w-full max-w-sm">
+            <svg id="loading-spinner" class="animate-spin h-6 w-6 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <div id="loading-progress-container" class="hidden w-full space-y-1">
+                <div class="progress-container">
+                    <div id="loading-progress-bar" class="progress-bar">0%</div>
+                </div>
+                <span id="loading-progress-text" class="text-sm text-center text-gray-500 block w-full">0 / 0</span>
+            </div>
+            <span id="loading-message" class="text-lg text-gray-700 text-center">Chargement</span>
+            <span id="loading-dots" class="hidden text-lg text-gray-700 text-left w-3"><span class="dot-pulse">.</span></span>
+        </div>
+    </div>
+    
+    <!-- Popup/Modal de Doublons -->
+    <div id="duplicate-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold text-gray-900">Doublons Détectés</h3>
+                <button id="close-duplicate-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-4">
+                <p class="text-gray-600">
+                    L'importation a trouvé <strong id="duplicate-count">0</strong> lignes qui semblent déjà exister dans la base de données. 
+                    Comment souhaitez-vous traiter ces doublons ?
+                </p>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-duplicate-cancel" class="btn-base btn-gray">Annuler l'Import</button>
+                <button id="btn-duplicate-skip" class="btn-base btn-warning">Garder (Ignorer les nouvelles)</button>
+                <button id="btn-duplicate-replace" class="btn-base btn-primary">Remplacer (Écraser les anciennes)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Popup/Modal d'Erreur/Succès -->
+    <div id="error-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-md w-full">
+            <div class="flex items-start justify-between">
+                <h3 id="error-modal-title" class="text-xl font-semibold text-red-600">Erreur</h3>
+                <button id="close-error-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-4">
+                <p id="error-message" class="text-gray-700">Un problème est survenu.</p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="btn-error-ok" class="btn-base btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup/Modal de Confirmation d'Export -->
+    <div id="export-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold text-secondary">Confirmer l'Exportation</h3>
+                <button id="close-export-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-4">
+                <p class="text-gray-600 mb-3">Vous allez exporter les données avec les filtres suivants :</p>
+                <ul id="export-filter-summary" class="list-disc list-inside bg-slate-50 p-4 rounded-md text-sm text-slate-700 max-h-40 overflow-y-auto">
+                    <!-- Le résumé des filtres sera injecté ici -->
+                </ul>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-cancel-export" class="btn-base btn-gray">Annuler</button>
+                <button id="btn-confirm-export" class="btn-base btn-secondary">
+                    <i data-lucide="file-down" class="w-4 h-4 mr-2"></i> Confirmer l'Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup/Modal de Réinitialisation (Zone de Danger) -->
+    <div id="reset-db-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-red-300 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-red-600">ÊTES-VOUS ABSOLUMENT SÛR ?</h3>
+                <button id="close-reset-db-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-4 space-y-4">
+                <p class="text-gray-700">
+                    Cette action est <strong class="font-bold text-red-700">IRRÉVERSIBLE</strong>. 
+                    Elle supprimera définitivement <strong class="font-bold">toutes les données</strong> (Articles et Ventes) de la base de données.
+                </p>
+                
+                <!-- Vérification 1: Checkbox -->
+                <div class="flex items-start space-x-2 bg-slate-50 p-3 rounded-md">
+                    <input id="reset-db-confirm-1" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mt-1">
+                    <label for="reset-db-confirm-1" class="ml-2 block text-sm text-gray-700">
+                        Je comprends les risques et je confirme vouloir tout supprimer.
+                    </label>
+                </div>
+
+                <!-- Vérification 2: Text input -->
+                <div>
+                    <label for="reset-db-confirm-2" class="block text-sm font-medium text-gray-700 mb-1">
+                        Pour confirmer, veuillez taper le mot <code class="bg-red-100 text-red-700 px-1 py-0.5 rounded font-mono">SUPPRIMER</code> en majuscules ci-dessous :
+                    </label>
+                    <input type="text" id="reset-db-confirm-2" autocomplete="off" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-slate-900 font-mono" placeholder="SUPPRIMER">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-cancel-reset-db" class="btn-base btn-gray">Annuler</button>
+                <!-- Vérification 3: Bouton final (désactivé par défaut) -->
+                <button id="btn-confirm-reset-db" class="btn-base btn-danger" disabled>
+                    <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> Supprimer Définitivement
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup/Modal d'Aperçu d'Importation Ventes -->
+    <div id="import-preview-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold text-secondary">Aperçu de l'Importation des Ventes</h3>
+                <button id="close-import-preview-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-4 space-y-3">
+                <p class="text-gray-600">Votre fichier a été analysé avec succès. Voici le résumé :</p>
+                <ul class="list-none space-y-2">
+                    <li class="flex justify-between items-center bg-slate-50 p-2 rounded-md">
+                        <span class="font-medium text-slate-700">Lignes totales dans le fichier :</span>
+                        <span id="preview-total" class="font-bold text-lg text-secondary">0</span>
+                    </li>
+                    <li class="flex justify-between items-center bg-slate-50 p-2 rounded-md">
+                        <span class="font-medium text-slate-700">Lignes avec format valide :</span>
+                        <span id="preview-valid" class="font-bold text-lg text-secondary">0</span>
+                    </li>
+                    <li class="flex justify-between items-center bg-green-50 p-2 rounded-md border border-green-200">
+                        <span class="font-medium text-green-700">Codes "Gold" Reconnus :</span>
+                        <span id="preview-known" class="font-bold text-lg text-green-600">0</span>
+                    </li>
+                    <li class="flex justify-between items-center bg-yellow-50 p-2 rounded-md border border-yellow-200">
+                        <span class="font-medium text-yellow-700">Codes "Gold" Inconnus (seront importés) :</span>
+                        <span id="preview-unknown" class="font-bold text-lg text-yellow-600">0</span>
+                    </li>
+                </ul>
+                <p class="text-sm text-gray-500 pt-2">
+                    L'étape suivante vérifiera les doublons par rapport aux données déjà en base.
+                </p>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-cancel-import-preview" class="btn-base btn-gray">Annuler</button>
+                <button id="btn-confirm-import-preview" class="btn-base btn-primary">
+                    <i data-lucide="check" class="w-4 h-4 mr-2"></i> Confirmer et Importer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOUVEAU: Popup/Modal de Détail des Statistiques -->
+    <div id="stat-detail-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <!-- CORRECTION: Restauration du contenu HTML de la modale -->
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold text-secondary">Détails des Ventes</h3>
+                <button id="close-stat-detail-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <!-- MODIFIÉ: Ajout de max-h-96 et overflow-y-auto pour le scroll -->
+            <div class="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                <p id="stat-detail-title" class="text-lg font-medium text-gray-800">Pour : ...</p>
+                <p class="text-sm text-gray-500">Basé sur vos filtres actuels :</p>
+                <ul class="list-none space-y-2 bg-slate-50 p-4 rounded-md">
+                    <li class="flex justify-between items-center">
+                        <span class="font-medium text-slate-700">Montant Total :</span>
+                        <span id="stat-detail-total-htva" class="font-bold text-lg text-secondary">0</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                        <span class="font-medium text-slate-700">Nb. d'articles vendus :</span>
+                        <span id="stat-detail-total-articles" class="font-bold text-lg text-secondary">0</span>
+                    </li>
+                    <li class="flex justify-between items-center pt-2 border-t mt-2">
+                        <span class="font-medium text-slate-700">% du Montant total (filtré) :</span>
+                        <span id="stat-detail-percent-htva" class="font-bold text-lg text-primary">0%</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                        <span class="font-medium text-slate-700">% des Articles (filtrés) :</span>
+                        <span id="stat-detail-percent-articles" class="font-bold text-lg text-primary">0%</span>
+                    </li>
+                </ul>
+                <!-- NOUVEAU: Div pour les stats contextuelles -->
+                <div id="stat-detail-context-info" class="mt-4 pt-4 border-t border-slate-200">
+                    <!-- Le contenu sera injecté par JS -->
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-ok-stat-detail" class="btn-base btn-primary">OK</button>
+            </div>
+        </div>
+        <!-- FIN DE LA RESTAURATION -->
+    </div>
+
+    <!-- NOUVEAU: Popup/Modal d'Analyse Gemini -->
+    <div id="gemini-analysis-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+        <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold text-secondary flex items-center">
+                    <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-yellow-500"></i> Analyse IA
+                </h3>
+                <button id="close-gemini-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="gemini-modal-content" class="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                <!-- Le contenu sera injecté par JS -->
+                <div class="text-center p-4">
+                    <svg class="animate-spin h-6 w-6 text-secondary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2 text-gray-600">Analyse en cours...</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="btn-ok-gemini-modal" class="btn-base btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        /*
+          SCRIPT PRINCIPAL DE L'APPLICATION
+          Tout le code JS est ici, en type="module"
+        */
+        
+        // --- IMPORTS FIREBASE (SUPPRIMÉS) ---
+        
+        // --- CONFIGURATION API (AJOUTÉE) ---
+        const apiBaseUrl = "https://api.planif.site";
+        
+        // NOUVEAU: Configuration API Gemini
+        const GEMINI_API_KEY = "AIzaSyCWtNKuUH6Pzew4U8xZXzyzM60BTZCR6Hk"; // Clé API insérée
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+
+        // --- INITIALISATION ---
+        let dbReady = false;
+        let allVentesData = []; // Cache local pour toutes les ventes
+        let allArticlesData = new Map(); // Cache local pour les articles (Map pour VLOOKUP rapide)
+ 
+        // --- Helpers de parsing pour les ventes (dates / prix) ---
+        function parseVenteDate(rawDate) {
+            if (!rawDate) return null;
+
+            if (rawDate instanceof Date && !isNaN(rawDate)) {
+                return rawDate;
+            }
+
+            const s = String(rawDate).trim();
+            if (!s) return null;
+
+            // Essai direct avec le constructeur Date
+            let d = new Date(s);
+            if (!isNaN(d)) return d;
+
+            // Format MySQL classique : "YYYY-MM-DD HH:MM:SS"
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) {
+                d = new Date(s.replace(' ', 'T'));
+                if (!isNaN(d)) return d;
+            }
+
+            // Format "DD-MM-YYYY" ou "DD/MM/YYYY" (ex : 22-05-2025 venant d'Excel)
+            let m = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+            if (m) {
+                const [_, dd, mm, yyyy] = m;
+                d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+                if (!isNaN(d)) return d;
+            }
+
+            // Format "YYYYMMDD"
+            m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+            if (m) {
+                const [_, yyyy, mm, dd] = m;
+                d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+                if (!isNaN(d)) return d;
+            }
+
+            return null;
+        }
+
+        function parsePrixHT(rawPrix) {
+            if (rawPrix === null || rawPrix === undefined) return 0;
+            if (typeof rawPrix === 'number' && !isNaN(rawPrix)) return rawPrix;
+
+            const s = String(rawPrix).trim().replace(',', '.');
+            const n = parseFloat(s);
+            return isNaN(n) ? 0 : n;
+        }
+       let chartInstances = {}; // Pour stocker les instances de graphiques
+        
+        // AJOUT: Variables globales manquantes pour les doublons
+        let duplicateData = [];
+        let nonDuplicateData = [];
+        let preparedVentesData = []; // NOUVEAU: Pour l'aperçu d'import
+
+        // --- ÉLÉMENTS DU DOM ---
+        const pageContent = () => document.getElementById('page-content');
+        const loadingModal = () => document.getElementById('loading-modal');
+        const duplicateModal = () => document.getElementById('duplicate-modal');
+        const errorModal = () => document.getElementById('error-modal');
+        
+        // SUPPRIMÉ: Éléments du panneau de filtre
+
+
+        // --- COULEURS THÈME ---
+        const primaryColor = '#E56A54';
+        const secondaryColor = '#00594E';
+
+        /**
+         * Initialise l'application en chargeant les données (REMPLACÉ)
+         */
+async function loadInitialData() {
+            showLoading("Chargement des données initiales...");
+
+            try {
+                // 1. Charger tous les articles
+                const articles = await fetch(`${apiBaseUrl}/api/articles`, { mode: 'cors' }).then(r => r.json());
+                allArticlesData.clear();
+                articles.forEach(article => {
+                    allArticlesData.set(article.codeGold, article);
+                });
+                console.log(`[Data] ${allArticlesData.size} articles chargés.`);
+
+                // 2. Charger toutes les ventes
+                const ventes = await fetch(`${apiBaseUrl}/api/ventes`, { mode: 'cors' }).then(r => r.json());
+                
+                allVentesData = [];
+                
+                ventes.forEach(data => {
+                    const rawDate = data.dateVente ?? data.date_vente ?? data.date ?? data.DateVente ?? data.datevente ?? data.GP_DATEPIECE ?? data.gp_datepiece ?? null;
+                    const parsedDate = parseVenteDate(rawDate);
+
+                    const prixHT = parsePrixHT(data.prixHT ?? data.prix_ht ?? data.GL_PUHT ?? data.gl_puht ?? data.prix ?? data.montant);
+
+                    // --- DÉCODAGE DU "TRANSPORTEUR" (C'est ici la magie) ---
+                    let nomBrut = data.nomMagasin || '';
+                    let finalNom = nomBrut;
+                    let finalStatut = 'Autre';
+                    let finalPays = 'Autre';
+
+                    // On regarde si le nom contient nos infos cachées
+                    if (nomBrut && nomBrut.includes('|||')) {
+                        const parts = nomBrut.split('|||');
+                        finalNom = parts[0];    // Vrai nom (ex: Tom&Co)
+                        finalStatut = parts[1]; // Statut (ex: Franchisé)
+                        finalPays = parts[2];   // Pays (ex: Belgique)
+                    }
+
+const vente = {
+    ...data,
+    dateVente: rawDate,
+    date: parsedDate,
+    prixHT,
+    nomMagasin: finalNom,
+    statut: finalStatut,
+    pays: finalPays
+};
+                    if (!vente.date) {
+                        console.warn("Vente avec date invalide ou manquante (conservée):", data);
+                    }
+
+                    allVentesData.push(vente);
+                });
+                    
+                console.log(`[Data] ${allVentesData.length} ventes valides chargées.`);
+                    
+                // 3. Mettre à jour la page
+                if (document.getElementById('accueil-container')) {
+                    populateFilters();
+                    updateAccueilPage();
+                }
+                if (document.getElementById('admin-container')) {
+                    updateAdminTable();
+                }
+
+            } catch (error) {
+                console.error("Erreur lors du chargement des données initiales:", error);
+                showError("Erreur de chargement des données.");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- SUPPRIMÉ: Fonctions d'appel API Gemini ---
+        // --- SUPPRIMÉ: Fonctions de la modale Gemini ---
+
+
+        /**
+         * Navigation simple entre les pages
+         */
+        function navigateTo(page) {
+            // MODIFIÉ: on vérifie dbReady seulement
+            if (!dbReady && page !== 'loading') {
+                console.warn("Base de données pas prête, navigation annulée.");
+                return;
+            }
+            console.log(`Navigation vers: ${page}`);
+            const content = pageContent();
+            
+            // Mettre à jour la classe active sur les liens de la navbar
+            document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(link => {
+                link.classList.remove('nav-link-active');
+                if (link.id.includes(page)) {
+                    link.classList.add('nav-link-active');
+                }
+            });
+
+            // Fermer le menu burger
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) mobileMenu.classList.add('hidden');
+            const menuButton = document.getElementById('mobile-menu-button');
+            if(menuButton) {
+                menuButton.querySelector('svg.block').classList.remove('hidden');
+                menuButton.querySelector('svg.hidden').classList.add('hidden');
+            }
+
+
+            switch (page) {
+                case 'accueil':
+                    content.innerHTML = getAccueilHTML();
+                    initAccueilPage();
+                    break;
+                case 'admin':
+                    content.innerHTML = getAdminHTML();
+                    initAdminPage();
+                    break;
+                case 'loading':
+                    content.innerHTML = `<div class="p-8 text-center"><p class="text-lg">Chargement de l'application...</p></div>`;
+                    break;
+                default:
+                    content.innerHTML = getAccueilHTML();
+                    initAccueilPage();
+            }
+            // Mettre à jour les icônes après le changement de DOM
+            lucide.createIcons();
+        }
+
+        // =====================================================================
+        // SECTION DES FONCTIONS DE PAGE (Déplacées ici pour corriger l'erreur)
+        // =====================================================================
+
+        function showLoading(message = "Chargement...", showProgress = false) {
+            updateLoadingMessage(message); // Utilise la nouvelle fonction
+            const spinner = document.getElementById('loading-spinner');
+            const progressContainer = document.getElementById('loading-progress-container');
+            const dots = document.getElementById('loading-dots');
+
+            if (showProgress) {
+                spinner.classList.add('hidden');
+                progressContainer.classList.remove('hidden');
+                dots.classList.remove('hidden'); // Afficher les points
+                updateLoadingProgress(0, "0 / 0"); // Réinitialiser
+            } else {
+                spinner.classList.remove('hidden');
+                progressContainer.classList.add('hidden');
+                dots.classList.add('hidden'); // Cacher les points
+            }
+            
+            loadingModal().classList.remove('hidden');
+        }
+        
+        // NOUVELLE FONCTION: Pour mettre à jour le message
+        function updateLoadingMessage(message) {
+            const el = document.getElementById('loading-message');
+            if (el) el.textContent = message;
+        }
+        
+        // NOUVEAU: Fonction pour mettre à jour la barre de progression
+        function updateLoadingProgress(percentage, text) {
+            const progressBar = document.getElementById('loading-progress-bar');
+            const progressText = document.getElementById('loading-progress-text');
+            
+            if (progressBar) {
+                const perc = Math.max(0, Math.min(100, percentage)); // S'assurer que c'est entre 0 et 100
+                progressBar.style.width = `${perc}%`;
+                progressBar.textContent = `${perc}%`;
+            }
+            if (progressText) {
+                progressText.textContent = text;
+            }
+        }
+
+        function hideLoading() {
+            loadingModal().classList.add('hidden');
+        }
+
+        function showModal(title, message, isError = true) {
+            const modal = errorModal();
+            const titleEl = document.getElementById('error-modal-title');
+            
+            document.getElementById('error-message').textContent = message;
+            titleEl.textContent = title;
+            
+            if (isError) {
+                titleEl.classList.add('text-red-600');
+                titleEl.classList.remove('text-green-600');
+            } else {
+                // C'est un message de succès
+                titleEl.classList.remove('text-red-600');
+                titleEl.classList.add('text-green-600');
+            }
+            modal.classList.remove('hidden');
+        }
+        
+        function showError(message) {
+            showModal("Erreur", message, true);
+        }
+        
+        function showSuccess(message) {
+            showModal("Succès", message, false);
+        }
+        
+        function hideError() {
+            errorModal().classList.add('hidden');
+        }
+        
+        function showDuplicateModal(count) {
+             document.getElementById('duplicate-count').textContent = count.toLocaleString('fr-FR');
+             duplicateModal().classList.remove('hidden');
+        }
+        
+        function hideDuplicateModal() {
+             duplicateModal().classList.add('hidden');
+        }
+        
+        // NOUVELLES FONCTIONS POUR LA MODALE D'EXPORT
+        function showExportModal() {
+            const summaryList = document.getElementById('export-filter-summary');
+            if (!summaryList) return;
+
+            const activeFilters = getActiveFilters();
+            summaryList.innerHTML = ''; // Vider la liste
+            let filterCount = 0;
+
+            if (activeFilters.periode !== 'all') {
+                // Essayer de récupérer le texte de l'option sélectionnée
+                const periodeSelect = document.getElementById('filter-periode');
+                let periodeText = activeFilters.periode;
+                if (periodeSelect && periodeSelect.selectedIndex >= 0) {
+                     periodeText = periodeSelect.options[periodeSelect.selectedIndex].text;
+                }
+                
+                summaryList.innerHTML += `<li class="font-medium">Période : <span class="font-normal">${periodeText}</span></li>`;
+                filterCount++;
+            }
+
+            const createFilterList = (title, filters) => {
+                if (filters.length > 0) {
+                    // Si la liste est trop longue, on affiche seulement le nombre
+                    const cutoff = 10;
+                    const itemsText = filters.length > cutoff ? 
+                        `${filters.length.toLocaleString('fr-FR')} sélections` : 
+                        filters.join(', ');
+                        
+                    summaryList.innerHTML += `<li class="font-medium">${title} : <span class="font-normal">${itemsText}</span></li>`;
+                    filterCount++;
+                }
+            };
+            
+            createFilterList('Animal(aux)', activeFilters.animals);
+            createFilterList('Type(s) de Code', activeFilters.types);
+            createFilterList('Marque(s)', activeFilters.marques);
+            createFilterList('Poids', activeFilters.poids);
+            createFilterList('Magasin(s)', activeFilters.magasins);
+            createFilterList('Code(s) Gold', activeFilters.codeGolds); // Modifié
+
+            if (filterCount === 0) {
+                summaryList.innerHTML = `<li>Toutes les données (aucun filtre appliqué).</li>`;
+            }
+
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
+
+        function hideExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+        
+        // NOUVEAU: Fonctions pour la modale de réinitialisation
+        function showResetDbModal() {
+            // Réinitialiser l'état de la modale à chaque ouverture
+            const confirm1 = document.getElementById('reset-db-confirm-1');
+            const confirm2 = document.getElementById('reset-db-confirm-2');
+            const confirmBtn = document.getElementById('btn-confirm-reset-db');
+            
+            if (confirm1) confirm1.checked = false;
+            if (confirm2) confirm2.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+
+            document.getElementById('reset-db-modal').classList.remove('hidden');
+        }
+
+        function hideResetDbModal() {
+            document.getElementById('reset-db-modal').classList.add('hidden');
+        }
+
+        // NOUVEAU: Fonctions pour la modale de détail des statistiques
+        function showStatDetailModal(title, stats, contextHtml = '') {
+            document.getElementById('stat-detail-title').textContent = title;
+            document.getElementById('stat-detail-total-htva').textContent = `€${stats.htva.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('stat-detail-total-articles').textContent = stats.articles.toLocaleString('fr-FR');
+            document.getElementById('stat-detail-percent-htva').textContent = `${stats.percentHtva.toFixed(1)}%`;
+            document.getElementById('stat-detail-percent-articles').textContent = `${stats.percentArticles.toFixed(1)}%`;
+            
+            // NOUVEAU: Ajout du contenu contextuel
+            document.getElementById('stat-detail-context-info').innerHTML = contextHtml;
+            
+            document.getElementById('stat-detail-modal').classList.remove('hidden');
+        }
+
+        function hideStatDetailModal() {
+            document.getElementById('stat-detail-modal').classList.add('hidden');
+        }
+
+        /* NOUVEAU: Fonctions pour la modale Gemini */
+        function showGeminiModal(content = null) {
+            const modal = document.getElementById('gemini-analysis-modal');
+            const contentEl = document.getElementById('gemini-modal-content');
+
+            if (content) {
+                // MODIFIÉ: Convertir le Markdown simple en HTML et gérer le trigger
+                let htmlContent = content.replace(/\n/g, '<br>'); // Lignes
+                
+                // Rendre "Lacune Critique" ou "Codes Inconnus" cliquable
+                htmlContent = htmlContent.replace(
+                    /(Lacune Critique|Codes Inconnus|code inconnu)/gi,
+                    '<span class="ai-filter-trigger">$1</span>'
+                );
+                
+                htmlContent = htmlContent.replace(/\* \*(.*?)\* \*/g, '<strong>$1</strong>'); // Gras
+                htmlContent = htmlContent.replace(/<br>\* (.*?)/g, '<li>$1</li>'); // Listes
+                htmlContent = htmlContent.replace(/<li>/g, '<li class="ml-4 list-disc">'); // Style de liste
+
+                contentEl.innerHTML = `<div class="prose prose-sm max-w-none">${htmlContent}</div>`;
+            } else {
+                // Afficher l'état de chargement par défaut
+                 contentEl.innerHTML = `
+                    <div class="text-center p-4">
+                        <svg class="animate-spin h-6 w-6 text-secondary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-gray-600">Analyse en cours...</p>
+                    </div>`;
+            }
+
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+            // Recréer l'icône de titre si elle a été perdue
+            lucide.createIcons();
+        }
+
+        function hideGeminiModal() {
+            const modal = document.getElementById('gemini-analysis-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            // Réinitialiser le contenu à l'état de chargement pour la prochaine fois
+            const contentEl = document.getElementById('gemini-modal-content');
+            if (contentEl) {
+                contentEl.innerHTML = `
+                    <div class="text-center p-4">
+                        <svg class="animate-spin h-6 w-6 text-secondary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-gray-600">Analyse en cours...</p>
+                    </div>`;
+            }
+        }
+        
+        /* NOUVEAU: Fonction pour appliquer le filtre IA */
+        function applyAiFilter() {
+            console.log("Application du filtre IA pour 'Code Inconnu'...");
+            
+            // 1. Trouver le conteneur de filtre "Type de Code"
+            const typeFilterBox = document.getElementById('filter-type');
+            if (!typeFilterBox) {
+                console.error("Conteneur de filtre 'filter-type' introuvable.");
+                return;
+            }
+            
+            // 2. Décocher toutes les cases de ce filtre
+            typeFilterBox.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // 3. Cocher *uniquement* la case "Code Inconnu"
+            const unknownCheckbox = typeFilterBox.querySelector('input[value="Code Inconnu"]');
+            if (unknownCheckbox) {
+                unknownCheckbox.checked = true;
+            } else {
+                console.warn("Checkbox 'Code Inconnu' introuvable.");
+                return;
+            }
+            
+            // 4. Mettre à jour la page et fermer la modale
+            updateAccueilPage();
+            hideGeminiModal();
+        }
+
+        /**
+         * NOUVEAU: Fonction d'appel à l'API Gemini
+         */
+        async function callGeminiApi(prompt) {
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    // MODIFIÉ: Ajout d'instructions système pour guider le modèle
+                    systemInstruction: {
+                        parts: [{ text: `
+Tu es un analyste de ventes senior pour un réseau d'animaleries.
+Ton objectif principal est d'aider le management à optimiser les marges.
+Le contexte business est le programme de fidélité "9+1" : le 10ème sac acheté est offert.
+Le problème le plus critique est de donner des articles "Code Inconnu" gratuitement, car c'est une perte sèche pour l'entreprise (marge = 0).
+Analyse les données suivantes en te concentrant sur ce problème. Si tu vois des "Codes Inconnus", identifie-les comme une "Lacune Critique".
+Rédige une analyse concise (maximum 150 mots) en français, sous forme de liste à puces. Termine par une recommandation claire et unique.
+`
+                        }]
+                    },
+                };
+
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("Erreur de l'API Gemini:", response.status, errorBody);
+                    throw new Error(`Erreur de l'API Gemini (statut ${response.status}). Vérifiez la console.`);
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    return candidate.content.parts[0].text;
+                } else {
+                    console.warn("Réponse inattendue de Gemini:", result);
+                    throw new Error("La réponse de l'API Gemini était vide ou mal formée.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'appel à l'API Gemini:", error);
+                // Retourner un message d'erreur formaté pour l'utilisateur
+                return `**Erreur lors de l'analyse :**\n${error.message}`;
+            }
+        }
+
+        /**
+         * NOUVEAU: Gère le clic sur le bouton d'analyse IA
+         */
+        async function handleGeminiAnalysis() {
+            console.log("Lancement de l'analyse IA...");
+            showGeminiModal(); // Affiche la version "chargement"
+
+            // 1. Récupérer les données filtrées
+            const filteredData = getFilteredData();
+            if (filteredData.length === 0) {
+                showGeminiModal("**Impossible d'analyser :** Aucune donnée ne correspond à vos filtres actuels.");
+                return;
+            }
+            
+            // 2. Récupérer les KPIs
+            const totalHtva = document.getElementById('kpi-total')?.textContent || "N/A";
+            const nbMagasins = document.getElementById('kpi-nb-magasins')?.textContent || "N/A";
+            const nbArticles = parseFloat((document.getElementById('kpi-nb-articles')?.textContent || "0").replace(/[^0-9]/g, '')); // S'assurer que c'est un nombre
+
+            // 3. Récupérer les Tops et les "Inconnus"
+            const aggregates = getAggregatedData(filteredData);
+            const topAnimals = sortAggregatedData(aggregates.animalCounts, 3);
+            const topBrands = sortAggregatedData(aggregates.marqueCounts, 3);
+            const topCodes = sortAggregatedData(aggregates.codeGoldCounts, 3);
+            
+            const topArticles = topCodes.labels.map((code, index) => {
+                const article = allArticlesData.get(code);
+                const label = article ? (article.libelle || 'Inconnu') : 'Inconnu';
+                return `${label.substring(0, 20)}... (${topCodes.values[index]} ventes)`;
+            }).join(', ');
+            
+            // MODIFIÉ: Calculer spécifiquement les ventes "Inconnues"
+            const unknownSales = Object.entries(aggregates.codeGoldCounts)
+                .filter(([code]) => !allArticlesData.has(code))
+                .reduce((sum, [, count]) => sum + count, 0);
+            
+            const unknownPercentage = (nbArticles > 0) ? (unknownSales / nbArticles) * 100 : 0;
+
+            // 4. Construire le prompt
+            const prompt = `
+            Voici les données de ventes filtrées :
+            - Montant Total : ${totalHtva}
+            - Nombre de Magasins : ${nbMagasins}
+            - Nombre total d'Articles Vendus (Gratuits) : ${nbArticles}
+            
+            - **Nombre d'articles "Code Inconnu" vendus : ${unknownSales} (${unknownPercentage.toFixed(1)}% du total)**
+            
+            Top 3 Animaux (par ventes) : ${topAnimals.labels.join(', ') || 'N/A'}
+            Top 3 Marques (par ventes) : ${topBrands.labels.join(', ') || 'N/A'}
+            Top 3 Articles (par ventes) : ${topArticles || 'N/A'}
+            
+            Fournis une analyse et une recommandation.
+            `;
+
+            // 5. Appeler l'API et afficher
+            const analysis = await callGeminiApi(prompt);
+            showGeminiModal(analysis);
+        }
+
+
+        // NOUVEAU: Fonction de gestion des clics sur les graphiques
+        function handleChartClick(label, index, context) {
+            console.log("Clic détecté:", label, index, context);
+            
+            // 1. Déterminer la valeur du filtre (le code ou le nom du magasin)
+            let filterValue = '';
+            let filterType = context.type;
+            let modalTitle = '';
+
+            if (filterType === 'magasin') {
+                filterValue = label;
+                modalTitle = `Pour le magasin : ${label}`;
+            } else if (filterType === 'codeGold') {
+                filterValue = context.originalLabels[index]; // Récupérer le code brut
+                modalTitle = `Pour l'article : ${label}`; // Utilise le label formaté
+            }
+
+            if (!filterValue) return;
+
+            // 2. Récupérer l'ensemble des données filtrées (la base de nos pourcentages)
+            const baseFilteredData = getFilteredData();
+            const totalBaseHtva = baseFilteredData.reduce((sum, v) => sum + v.prixHT, 0);
+            const totalBaseArticles = baseFilteredData.length;
+
+            // NOUVEAU: Pour le classement général (avant de filtrer pour le clic)
+            let overallRanking = new Map();
+            let rankingData = {};
+
+            if (filterType === 'magasin') {
+                rankingData = {};
+                baseFilteredData.forEach(v => {
+                    rankingData[v.nomMagasin] = (rankingData[v.nomMagasin] || 0) + 1; // Classement par nb. ventes
+                });
+            } else if (filterType === 'codeGold') {
+                 rankingData = {};
+                baseFilteredData.forEach(v => {
+                    rankingData[v.codeGold] = (rankingData[v.codeGold] || 0) + 1; // Classement par nb. ventes
+                });
+            }
+
+            // Trier le classement
+            const sortedRanking = Object.entries(rankingData).sort(([,a],[,b]) => b-a);
+            
+            // Créer une Map [key, rang]
+            sortedRanking.forEach(([key, value], idx) => {
+                overallRanking.set(key, { rank: idx + 1, total: sortedRanking.length, value: value });
+            });
+            // Fin du calcul de classement
+
+            // 3. Filtrer ces données pour l'élément spécifique cliqué
+            const specificData = baseFilteredData.filter(vente => {
+                if (filterType === 'magasin') {
+                    return vente.nomMagasin === filterValue;
+                }
+                if (filterType === 'codeGold') {
+                    return vente.codeGold === filterValue;
+                }
+                return false;
+            });
+
+            // 4. Calculer les statistiques pour cet élément
+            const totalSpecificHtva = specificData.reduce((sum, v) => sum + v.prixHT, 0);
+            const totalSpecificArticles = specificData.length;
+
+            // 5. Calculer les pourcentages
+            const percentHtva = (totalBaseHtva > 0) ? (totalSpecificHtva / totalBaseHtva) * 100 : 0;
+            const percentArticles = (totalBaseArticles > 0) ? (totalSpecificArticles / totalBaseArticles) * 100 : 0;
+
+            // NOUVEAU: 6. Construire le HTML contextuel
+            let htmlContent = '';
+            
+            // AJOUT: Afficher le classement
+            const ranking = overallRanking.get(filterValue);
+            if (ranking) {
+                const rankTitle = filterType === 'magasin' ? 'Classement Général (par ventes)' : 'Classement Article (par ventes)';
+                const rankUnit = filterType === 'magasin' ? 'magasins' : 'articles';
+                
+                htmlContent += `<div class="bg-blue-50 border border-blue-200 p-3 rounded-md mb-4">
+                    <h4 class="text-md font-semibold text-blue-700 mb-1">${rankTitle}</h4>
+                    <p class="text-blue-600 font-bold text-lg">${ranking.rank}ème <span class="font-normal text-sm">sur ${ranking.total} ${rankUnit} (avec ${ranking.value.toLocaleString('fr-FR')} ventes)</span></p>
+                </div>`;
+            }
+
+
+            if (filterType === 'codeGold') {
+                const article = allArticlesData.get(filterValue);
+                htmlContent += '<h4 class="text-md font-semibold text-slate-700 mb-2">Informations sur l\'article</h4>';
+                htmlContent += '<ul class="list-none space-y-1 text-sm text-slate-600">';
+                if (article) {
+                    htmlContent += `<li><strong>Libellé:</strong> ${article.libelle || 'N/A'}</li>`;
+                    htmlContent += `<li><strong>Marque:</strong> ${article.marque || 'N/A'}</li>`;
+                    htmlContent += `<li><strong>Animal:</strong> ${article.animal || 'N/A'}</li>`;
+                    htmlContent += `<li><strong>Poids:</strong> ${article.poids || 'N/A'}</li>`;
+                } else {
+                    htmlContent += `<li>Article "Code Inconnu"</li>`;
+                }
+                htmlContent += '</ul>';
+
+                // Top 3 Magasins pour cet article (MODIFIÉ pour HTVA)
+                const magasinStats = {};
+                specificData.forEach(v => {
+                    if (!magasinStats[v.nomMagasin]) {
+                        magasinStats[v.nomMagasin] = { count: 0, htva: 0 };
+                    }
+                    magasinStats[v.nomMagasin].count += 1;
+                    magasinStats[v.nomMagasin].htva += v.prixHT;
+                });
+                
+                const sortedMagasins = Object.entries(magasinStats)
+                    .sort(([,a],[,b]) => b.count - a.count) // Trier par nb ventes
+                    .slice(0, 3);
+                
+                htmlContent += '<h4 class="text-md font-semibold text-slate-700 mt-4 mb-2">Top 3 Magasins (pour cet article)</h4>';
+                if (sortedMagasins.length > 0) {
+                    htmlContent += '<ol class="list-decimal list-inside text-sm text-slate-600 space-y-1">';
+                    sortedMagasins.forEach(([nom, stats]) => {
+                        const formattedHtva = `€${stats.htva.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        htmlContent += `<li>${nom}<br>
+                            <span class="ml-4 text-xs"> ${stats.count.toLocaleString('fr-FR')} ventes (${formattedHtva})</span>
+                        </li>`;
+                    });
+                    htmlContent += '</ol>';
+                } else {
+                    htmlContent += '<p class="text-sm text-slate-500 italic">Aucune donnée de magasin.</p>';
+                }
+
+            } else if (filterType === 'magasin') {
+                
+                // Top 3 Articles pour ce magasin (MODIFIÉ pour HTVA)
+                const articleStats = {};
+                specificData.forEach(v => {
+                    if (!articleStats[v.codeGold]) {
+                        articleStats[v.codeGold] = { count: 0, htva: 0 };
+                    }
+                    articleStats[v.codeGold].count += 1;
+                    articleStats[v.codeGold].htva += v.prixHT;
+                });
+                
+                const sortedArticles = Object.entries(articleStats)
+                    .sort(([,a],[,b]) => b.count - a.count) // Trier par nb ventes
+                    .slice(0, 3);
+                
+                htmlContent += '<h4 class="text-md font-semibold text-slate-700 mt-4 mb-2">Top 3 Articles (dans ce magasin)</h4>';
+                if (sortedArticles.length > 0) {
+                    htmlContent += '<ol class="list-decimal list-inside text-sm text-slate-600 space-y-1">';
+                    sortedArticles.forEach(([code, stats]) => {
+                        const article = allArticlesData.get(code);
+                        const label = article ? (article.libelle || 'N/A') : 'Code Inconnu';
+                        // NOUVEAU: Formatage avec le prix
+                        const formattedHtva = `€${stats.htva.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        htmlContent += `<li>${label} (${code})<br>
+                            <span class="ml-4 text-xs"> ${stats.count.toLocaleString('fr-FR')} ventes (${formattedHtva})</span>
+                        </li>`;
+                    });
+                    htmlContent += '</ol>';
+                } else {
+                    htmlContent += '<p class="text-sm text-slate-500 italic">Aucune donnée d\'article.</p>';
+                }
+            }
+
+
+            // 7. Afficher la modale
+            showStatDetailModal(modalTitle, {
+                htva: totalSpecificHtva,
+                articles: totalSpecificArticles,
+                percentHtva: percentHtva,
+                percentArticles: percentArticles
+            }, htmlContent);
+        }
+        
+        // (SUPPRIMÉ: deleteCollectionContents)
+
+        // NOUVEAU: Fonction de suppression principale - MODIFIÉE (REMPLACÉE)
+        async function handleResetDatabase() {
+            hideResetDbModal();
+            showLoading("Réinitialisation de la base de données...", false);
+
+            try {
+                // 1. Supprimer toutes les ventes
+                updateLoadingMessage("Suppression des ventes...");
+                const ventesRes = await fetch(`${apiBaseUrl}/api/ventes`, {
+                    method: 'DELETE',
+                    mode: 'cors' // AJOUTÉ
+                });
+                if (!ventesRes.ok) throw new Error('Échec de la suppression des ventes');
+                
+                // 2. Supprimer tous les articles
+                updateLoadingMessage("Suppression des articles...");
+                const articlesRes = await fetch(`${apiBaseUrl}/api/articles`, {
+                    method: 'DELETE',
+                    mode: 'cors' // AJOUTÉ
+                });
+                if (!articlesRes.ok) throw new Error('Échec de la suppression des articles');
+
+                // 3. Afficher le succès
+                setTimeout(async () => { // Ajout de async ici
+                   hideLoading();
+                   showSuccess("Succès ! La base de données a été réinitialisée.");
+                   // Recharger les données (maintenant vides)
+                   await loadInitialData(); 
+                }, 500);
+                
+            } catch (err) {
+                console.error("Erreur lors de la réinitialisation de la base de données:", err);
+                showError("Une erreur est survenue: " + err.message);
+                hideLoading(); // Cacher en cas d'erreur aussi
+            }
+        }
+        
+        // SUPPRIMÉ: Fonctions pour ouvrir/fermer le panneau de filtres
+
+
+        // =====================================================================
+        // PAGE ACCUEIL (HTML)
+        // =====================================================================
+        function getAccueilHTML() {
+            // MODIFIÉ: Nouvelle structure en 2 colonnes
+            return `
+                <!-- MODIFIÉ: lg:grid-cols-4 pour un layout 1/4 + 3/4 -->
+                <div id="accueil-container" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Colonne de Gauche (Filtres) -->
+                    <div class="lg:col-span-1 space-y-4 lg:sticky lg:top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 filter-scrollbar-hide">
+                        <h2 class="text-2xl font-bold text-secondary">📊 Filtres & Période</h2>
+                        
+                        <!-- Période -->
+                        <div class="bg-white p-4 rounded-lg shadow-xl border border-gray-100">
+                            <label for="filter-periode" class="block text-sm font-medium text-gray-700 mb-1">Période</label>
+                            <select id="filter-periode" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                <option value="all">Depuis toujours</option>
+                                <option value="today">Aujourd'hui</option>
+                                <option value="yesterday">Hier</option>
+                                <option value="this-week">Cette semaine</option>
+                                <option value="last-week">La semaine dernière</option>
+                                <option value="this-month">Ce mois-ci</option>
+                                <option value="last-month">Le mois dernier</option>
+                                <option value="last-3-months">Les 3 derniers mois</option>
+                                <option value="last-6-months">Les 6 derniers mois</option>
+                                <option value="this-year">Cette année</option>
+                                <option value="custom">Personnalisé...</option>
+                            </select>
+                            
+                            <!-- NOUVEAU: Champs de date personnalisés (cachés par défaut) -->
+                            <div id="custom-date-range" class="hidden mt-4 space-y-2">
+                                <div>
+                                    <label for="filter-date-start" class="block text-xs font-medium text-gray-500">Du</label>
+                                    <input type="date" id="filter-date-start" class="w-full p-2 border border-gray-300 rounded-md text-sm shadow-sm focus:ring-primary focus:border-primary">
+                                </div>
+                                <div>
+                                    <label for="filter-date-end" class="block text-xs font-medium text-gray-500">Au</label>
+                                    <input type="date" id="filter-date-end" class="w-full p-2 border border-gray-300 rounded-md text-sm shadow-sm focus:ring-primary focus:border-primary">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bouton Réinitialiser -->
+                        <div class="bg-white p-4 rounded-lg shadow-xl border border-gray-100">
+                            <button id="btn-reset-filters" class="btn-base btn-gray w-full">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i> Réinitialiser
+                            </button>
+                        </div>
+                        
+                        <!-- Filtres en Accordéon -->
+                        <!-- 1. Animal -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Animal</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-animal" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-animal">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 2. Type de Code -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Type de Code</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-type" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-type">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+<div class="border border-gray-200 rounded-lg bg-white shadow-xl mb-4">
+    <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+        <span class="font-medium text-gray-700">Pays</span>
+        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+    </button>
+    <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+        <div class="max-h-40 overflow-y-auto" id="filter-pays">
+            <p class="text-xs text-gray-500">Chargement...</p>
+        </div>
+    </div>
+</div>
+
+<div class="border border-gray-200 rounded-lg bg-white shadow-xl mb-4">
+    <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+        <span class="font-medium text-gray-700">Statut Magasin</span>
+        <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+    </button>
+    <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+        <div class="max-h-40 overflow-y-auto" id="filter-statut">
+            <p class="text-xs text-gray-500">Chargement...</p>
+        </div>
+    </div>
+</div>
+          <!-- 3. Marque (hors 9+1) -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Marque (hors 9+1)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-marque" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-marque">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Poids -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Poids (SKU Net Content)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-poids" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-poids">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Magasin -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Magasin (Nom)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-magasin" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-magasin">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. Code Gold -->
+                        <div class="border border-gray-200 rounded-lg bg-white shadow-xl">
+                            <button type="button" class="filter-toggle-btn flex justify-between items-center w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-t-lg">
+                                <span class="font-medium text-gray-700">Code Gold</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200"></i>
+                            </button>
+                            <div class="filter-content hidden bg-white p-3 rounded-b-lg">
+                                <input type="search" data-filter-target="filter-codeGold" class="filter-search-input w-full p-1.5 border border-gray-300 rounded-md text-sm mb-2" placeholder="Rechercher...">
+                                <div class="h-40 overflow-y-auto" id="filter-codeGold">
+                                    <p class="text-xs text-gray-500">Chargement...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Colonne de Droite (Contenu) -->
+                    <!-- MODIFIÉ: lg:col-span-3 pour un layout 3/4 -->
+                    <div class="lg:col-span-3 space-y-6">
+                        
+                        <!-- Section des Indicateurs Clés (KPIs) -->
+                        <!-- MODIFIÉ: Passage à 3 colonnes sur md et + -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- KPI 1: Total Montant -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex items-center space-x-4">
+                                <div class="flex-shrink-0 bg-secondary/10 text-secondary p-3 rounded-full">
+                                    <i data-lucide="dollar-sign" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-500 uppercase">Total Montant</h4>
+                                    <p id="kpi-total" class="text-3xl font-bold text-slate-900 mt-1">€0.00</p>
+                                </div>
+                            </div>
+                            <!-- KPI 2: Nb. Magasins -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex items-center space-x-4">
+                                <div class="flex-shrink-0 bg-primary/10 text-primary p-3 rounded-full">
+                                    <i data-lucide="store" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-500 uppercase">Nb. Magasins</h4>
+                                    <p id="kpi-nb-magasins" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                                </div>
+                            </div>
+                            <!-- KPI 3: Nb. Articles Vendus -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex items-center space-x-4">
+                                <div class="flex-shrink-0 bg-secondary/10 text-secondary p-3 rounded-full">
+                                    <i data-lucide="package" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-500 uppercase">Nb. Articles Vendus</h4>
+                                    <p id="kpi-nb-articles" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                                </div>
+                            </div>
+                            <!-- SUPPRIMÉ: KPI 4: % Codes Inconnus -->
+                        </div>
+                        
+                        <!-- NOUVEAU: Section d'Analyse IA -->
+
+                        
+                        <!-- Section des Graphiques (Grille) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- 1. Répartition par Animal (%) -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                                <h3 class="text-lg font-semibold mb-3 text-secondary">Répartition par Animal (nb. articles)</h3>
+                                <div class="relative h-[300px]">
+                                    <canvas id="chart-repartition-animal"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- 2. Top Marques (Nb) -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-lg font-semibold text-secondary"> Top Marques (nb. articles)</h3>
+                                    <select id="select-top-marques" class="p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                        <option value="3">Top 3</option>
+                                        <option value="10" selected>Top 10</option>
+                                        <option value="20">Top 20</option>
+                                    </select>
+                                </div>
+                                <div class="relative h-[300px]">
+                                    <canvas id="chart-top-marques"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 3. Montant par Animal (MODIFIÉ: Camembert) -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                                <h3 class="text-lg font-semibold mb-3 text-secondary">Montant par Animal</h3>
+                                <div class="relative h-[300px]">
+                                    <canvas id="chart-montant-animal"></canvas>
+                                </div>
+                            </div> <!-- <<< CORRECTION: Ajout du div fermant manquant -->
+
+                            <!-- 4. Top Montant par Marque (MODIFIÉ: Camembert) -->
+                            <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                                 <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-lg font-semibold text-secondary">Top Montant par Marque</h3>
+                                    <select id="select-top-montant-marques" class="p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                        <option value="3">Top 3</option>
+                                        <option value="10" selected>Top 10</option>
+                                        <option value="20">Top 20</option>
+                                    </select>
+                                </div>
+                                <div class="relative h-[300px]">
+                                    <canvas id="chart-top-montant-marques"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- NOUVEAU: Top Articles (Code Gold) -->
+                        <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                             <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-secondary">Top Articles (par Code Gold)</h3>
+                                <select id="select-top-code-gold" class="p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                    <option value="3">Top 3</option>
+                                    <option value="10" selected>Top 10</option>
+                                    <option value="20">Top 20</option>
+                                </select>
+                            </div>
+                            <div class="relative h-[300px]">
+                                <canvas id="chart-top-code-gold"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- NOUVEAU: Top Magasins (par nb. ventes) -->
+                        <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                             <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-secondary">Top Magasins (par nb. ventes)</h3>
+                                <select id="select-top-magasins" class="p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                    <option value="3">Top 3</option>
+                                    <option value="10" selected>Top 10</option>
+                                    <option value="20">Top 20</option>
+                                </select>
+                            </div>
+                            <div class="relative h-[300px]">
+                                <canvas id="chart-top-magasins"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 7. Évolution des Achats -->
+                        <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-secondary">📈 Évolution des Achats (Montant)</h3>
+                                <!-- NOUVEAU: Filtre de granularité -->
+                                <select id="select-evolution-montant" class="evolution-granularity-select p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                    <option value="jour">Par Jour</option>
+                                    <option value="semaine">Par Semaine</option>
+                                    <option value="mois" selected>Par Mois</option>
+                                </select>
+                            </div>
+                            <div class="relative h-[250px]">
+                                <canvas id="chart-evolution-achats"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- NOUVEAU: 8. Évolution des Articles -->
+                        <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-secondary">📊 Évolution des Articles (Nombre)</h3>
+                                <!-- NOUVEAU: Filtre de granularité -->
+                                <select id="select-evolution-articles" class="evolution-granularity-select p-1 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                                    <option value="jour">Par Jour</option>
+                                    <option value="semaine">Par Semaine</option>
+                                    <option value="mois" selected>Par Mois</option>
+                                </select>
+                            </div>
+                            <div class="relative h-[250px]">
+                                <canvas id="chart-evolution-articles"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Section d'Export Excel -->
+                        <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                            <h2 class="text-2xl font-bold mb-4 text-secondary">🚀 Extraction Excel</h2>
+                            <p class="text-gray-600 mb-4">Exportez les données filtrées (ou l'ensemble des données si aucun filtre n'est appliqué) au format Excel.</p>
+                            <button id="btn-export-excel" class="btn-base btn-secondary">
+                                <i data-lucide="file-down" class="w-4 h-4 mr-2"></i> Exporter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =====================================================================
+        // PAGE ACCUEIL (JS)
+        // =====================================================================
+
+        function initAccueilPage() {
+            console.log("Initialisation de la page d'accueil...");
+            
+            // MODIFIÉ: Logique des filtres (accordéon, recherche, reset) déplacée ici
+            
+            // Écouteur pour le bouton "Réinitialiser" (maintenant dans la colonne)
+            document.getElementById('btn-reset-filters')?.addEventListener('click', () => {
+                resetFilters();
+                updateAccueilPage();
+            });
+            
+            // Écouteurs pour les filtres (Accordéon)
+            const allFilterBtns = document.querySelectorAll('.filter-toggle-btn');
+            const allFilterContents = document.querySelectorAll('.filter-content');
+            const allFilterSvgs = document.querySelectorAll('.filter-toggle-btn svg');
+
+            allFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const currentContent = btn.nextElementSibling;
+                    const currentSvg = btn.querySelector('svg');
+                    const isOpening = currentContent.classList.contains('hidden');
+
+                    // 1. Fermer TOUS les autres (mode accordéon simple)
+                    allFilterContents.forEach(content => {
+                        if (content !== currentContent) {
+                            content.classList.add('hidden');
+                        }
+                    });
+                    allFilterSvgs.forEach(svg => {
+                        if (svg !== currentSvg) {
+                            svg.classList.remove('rotate-180');
+                        }
+                    });
+
+                    // 2. Ouvrir/Fermer l'actuel
+                    if (isOpening) {
+                        currentContent.classList.remove('hidden');
+                        currentSvg?.classList.add('rotate-180');
+                    } else {
+                        currentContent.classList.add('hidden');
+                        currentSvg?.classList.remove('rotate-180');
+                    }
+                });
+            });
+
+            // Écouteurs pour les barres de recherche de filtre
+            document.querySelectorAll('.filter-search-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const targetListId = e.target.getAttribute('data-filter-target');
+                    const listContainer = document.getElementById(targetListId);
+
+                    if (!listContainer) return;
+
+                    const items = listContainer.querySelectorAll('div.flex'); // Les wrappers (div) des checkboxes
+                    items.forEach(item => {
+                        const label = item.querySelector('label');
+                        if (label) {
+                            const labelText = label.textContent.toLowerCase();
+                            if (labelText.includes(searchTerm)) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+            });
+            
+            // Écouteur pour le bouton "Exporter"
+            document.getElementById('btn-export-excel')?.addEventListener('click', showExportModal);
+            
+            // NOUVEAU: Écouteur pour le bouton "Analyse Gemini"
+            document.getElementById('btn-gemini-analyze')?.addEventListener('click', handleGeminiAnalysis);
+            
+            // Écouteurs pour les listes déroulantes des graphiques
+            document.getElementById('select-top-marques')?.addEventListener('change', updateAccueilPage);
+            document.getElementById('select-top-montant-marques')?.addEventListener('change', updateAccueilPage);
+            document.getElementById('select-top-code-gold')?.addEventListener('change', updateAccueilPage);
+            document.getElementById('select-top-magasins')?.addEventListener('change', updateAccueilPage); // AJOUTÉ
+            
+            // NOUVEAU: Écouteurs pour synchroniser les filtres d'évolution
+            const selectMontant = document.getElementById('select-evolution-montant');
+            const selectArticles = document.getElementById('select-evolution-articles');
+    
+            selectMontant?.addEventListener('change', (e) => {
+                if (selectArticles) selectArticles.value = e.target.value;
+                updateAccueilPage();
+            });
+            selectArticles?.addEventListener('change', (e) => {
+                if (selectMontant) selectMontant.value = e.target.value;
+                updateAccueilPage();
+            });
+
+            // MODIFIÉ: Écouteur pour la période (gère aussi l'affichage des dates)
+            const periodeSelect = document.getElementById('filter-periode');
+            const customDateDiv = document.getElementById('custom-date-range');
+            const dateStartInput = document.getElementById('filter-date-start');
+            const dateEndInput = document.getElementById('filter-date-end');
+
+            periodeSelect?.addEventListener('change', () => {
+                if (periodeSelect.value === 'custom') {
+                    customDateDiv?.classList.remove('hidden');
+                } else {
+                    customDateDiv?.classList.add('hidden');
+                }
+                updateAccueilPage(); // Mettre à jour les graphiques
+            });
+
+            // NOUVEAU: Écouteurs pour les champs de date personnalisés
+            dateStartInput?.addEventListener('change', () => {
+                if (periodeSelect.value === 'custom') {
+                    updateAccueilPage();
+                }
+            });
+            dateEndInput?.addEventListener('change', () => {
+                if (periodeSelect.value === 'custom') {
+                    updateAccueilPage();
+                }
+            });
+            
+            // SUPPRIMÉ: Ancien écouteur de période (maintenant géré ci-dessus)
+            
+            // Écouteur pour le bouton "Exporter"
+            document.getElementById('btn-export-excel')?.addEventListener('click', showExportModal);
+            
+            // SUPPRIMÉ: Écouteur pour le bouton "Analyse Gemini" (il est déjà présent au-dessus)
+            
+            // Écouteurs pour les listes déroulantes des graphiques
+            document.getElementById('select-top-marques')?.addEventListener('change', updateAccueilPage);
+        
+            // AJOUT: Lancer le chargement des données APRÈS avoir initialisé la page
+            loadInitialData();
+        } 
+
+        // =====================================================================
+        // PAGE ADMIN (HTML)
+        // =====================================================================
+        function getAdminHTML() {
+            return `
+                <div id="admin-container" class="space-y-8">
+                    
+                    <!-- Section d'Importation -->
+                    <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                        <h2 class="text-2xl font-bold mb-4 text-secondary">⚙️ Importation des Données</h2>
+                        
+                        <!-- Étape 1: Import Articles (Base de VLOOKUP) -->
+                        <div class="mb-6 p-4 border border-gray-200 rounded-lg">
+                            <label for="import-articles" class="block text-lg font-medium text-gray-800 mb-2">
+                                1️⃣ Étape 1 : Importer le fichier de référence "base.xlsx" (Feuille "Counters")
+                            </label>
+                            <p class="text-sm text-gray-600 mb-3">
+                                Ce fichier contient les détails des articles (Code Gold, Libellé, Marque, Animal, Poids).
+                                Il est nécessaire pour faire la correspondance avec les ventes.
+                            </p>
+                            <input type="file" id="import-articles" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-secondary file:text-white
+                                hover:file:bg-opacity-80"/>
+                            <button id="btn-import-articles" class="mt-3 btn-base btn-secondary">
+                                <i data-lucide="database" class="w-4 h-4 mr-2 inline-block"></i> Lancer l'import des Articles
+                            </button>
+                        </div>
+                        
+                        <!-- Étape 2: Import Ventes -->
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <label for="import-ventes" class="block text-lg font-medium text-gray-800 mb-2">
+                                2️⃣ Étape 2 : Importer le fichier des ventes (Excel)
+                            </label>
+                            <p class="text-sm text-gray-600 mb-3">
+                                Ce fichier contient les lignes de ventes (Magasin, Date, Code Article, Prix).
+                            </p>
+                            <input type="file" id="import-ventes" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-primary file:text-white
+                                hover:file:bg-opacity-80"/>
+                            <button id="btn-import-ventes" class="mt-3 btn-base btn-primary">
+                                <i data-lucide="upload" class="w-4 h-4 mr-2 inline-block"></i> Lancer l'import des Ventes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section de gestion des données -->
+                    <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-100">
+                        <h2 class="text-2xl font-bold mb-4 text-secondary">🗂️ Gestion des Données Importées</h2>
+                        
+                        <!-- Barre de recherche et filtres (pour la gestion) -->
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-4">
+                            <input type="search" id="search-data" placeholder="Rechercher par Code Gold, Magasin, Ticket..." class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-slate-900">
+                            <button id="btn-search-data" class="btn-base btn-secondary">
+                                <i data-lucide="search" class="w-4 h-4 mr-2 inline-block"></i> Rechercher
+                            </button>
+                        </div>
+                        
+                        <!-- Tableau des données -->
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-slate-100">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Magasin</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Code Gold</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Prix</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Article (auto)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="data-management-table" class="bg-white divide-y divide-gray-200">
+                                    <!-- Les lignes seront insérées ici -->
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                            Aucune donnée importée ou trouvée.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Affichage des 100 premiers résultats.</p>
+                    </div>
+                    
+                    <!-- NOUVEAU: Zone de Danger -->
+                    <div class="bg-white p-6 rounded-lg shadow-xl border-2 border-red-500">
+                        <h2 class="text-2xl font-bold mb-4 text-red-600">🛑 Zone de Danger</h2>
+                        <p class="text-gray-600 mb-4">
+                            L'action ci-dessous est irréversible et entraînera la suppression de toutes les données importées (Articles et Ventes).
+                            Utilisez avec une extrême prudence.
+                        </p>
+                        <button id="btn-show-reset-modal" class="btn-base btn-danger">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i> Réinitialiser la Base de Données
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =====================================================================
+        // PAGE ADMIN (JS)
+        // =====================================================================
+        
+        function initAdminPage() {
+            console.log("Initialisation de la page Admin...");
+            document.getElementById('btn-import-articles')?.addEventListener('click', handleImportArticles);
+            document.getElementById('btn-import-ventes')?.addEventListener('click', handleImportVentes);
+            document.getElementById('btn-search-data')?.addEventListener('click', updateAdminTable);
+            
+            document.getElementById('close-duplicate-modal')?.addEventListener('click', hideDuplicateModal);
+            document.getElementById('btn-duplicate-cancel')?.addEventListener('click', hideDuplicateModal); 
+            document.getElementById('btn-duplicate-skip')?.addEventListener('click', () => processDuplicates('skip'));
+            document.getElementById('btn-duplicate-replace')?.addEventListener('click', () => processDuplicates('replace'));
+            
+            // NOUVEAU: Écouteur pour le bouton de la zone de danger
+            document.getElementById('btn-show-reset-modal')?.addEventListener('click', showResetDbModal);
+            
+            lucide.createIcons();
+            updateAdminTable(); // Afficher les données actuelles
+        }
+        
+        // =====================================================================
+        // PAGE ACCUEIL (JS) - Suite
+        // =====================================================================
+
+        function populateFilters() {
+            console.log("Remplissage des filtres...");
+            if (allVentesData.length === 0) { // MODIFIÉ: Ne dépend plus de allArticlesData pour s'afficher
+                console.log("Données non disponibles pour le remplissage des filtres.");
+                return;
+            }
+
+const categories = {
+        animal: new Set(),
+        marque: new Set(),
+        type: new Set(),
+        poids: new Set(),
+        magasin: new Set(),
+        codeGold: new Set(),
+        statut: new Set(), // AJOUT
+        pays: new Set()    // AJOUT
+    };
+
+            for (const vente of allVentesData) {
+                const article = allArticlesData.get(vente.codeGold);
+                categories.magasin.add(vente.nomMagasin);
+                categories.codeGold.add(vente.codeGold); // AJOUT: On ajoute tous les codeGold
+                
+                // Gère (isKnownArticle === false) ou (article non trouvé pour ancien data)
+                const isKnown = (vente.isKnownArticle === undefined) ? (article != null) : (vente.isKnownArticle === true);
+
+                if (!isKnown) {
+                    categories.type.add('Code Inconnu');
+                } else if (article) { // S'assurer que 'article' existe avant d'y accéder
+                    categories.animal.add(article.animal);
+                    
+                    if (article.marque && article.marque.trim() !== '') { // S'assurer qu'il y a une marque
+                        if (article.marque.trim() === '9+1') {
+                            categories.type.add('9+1');
+                            // Ne pas ajouter '9+1' à la liste des marques
+                        } else {
+                            categories.type.add('Autres');
+                            categories.marque.add(article.marque.trim()); // Ajouter la VRAIE marque
+if (vente.statut) categories.statut.add(vente.statut);
+if (vente.pays) categories.pays.add(vente.pays);
+                            
+                        }
+                    }
+                    
+                    categories.poids.add(article.poids);
+                    // categories.article.add(article.libelle); // SUPPRIMÉ
+                } else if (vente.isKnownArticle === false) {
+                     categories.type.add('Code Inconnu');
+                }
+            } 
+            
+            const fillFilterBox = (elementId, items) => {
+                const container = document.getElementById(elementId);
+                if (!container) return;
+                
+                // Sauvegarder les coches actuelles
+                const checkedValues = new Set(
+                    Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+                         .map(cb => cb.value)
+                );
+
+                container.innerHTML = ''; 
+                const sortedItems = [...items].filter(Boolean).sort();
+                
+                if (sortedItems.length === 0) {
+                     container.innerHTML = '<p class="text-xs text-gray-500">Aucune option disponible.</p>';
+                     return;
+                }
+                
+                sortedItems.forEach(item => {
+                    const isChecked = checkedValues.has(item) ? 'checked' : '';
+                    const div = document.createElement('div');
+                    // MODIFIÉ: On utilise flex, et non plus "space-x-2" car le label est seul
+                    div.className = 'flex items-center'; 
+                    
+                    const inputId = `filter-${elementId}-${item.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    
+                    // Créer l'input (checkbox)
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = inputId;
+                    input.value = item;
+                    if (isChecked) {
+                        input.checked = true;
+                    }
+                    input.className = 'h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary';
+                    
+                    // *** AJOUT DE L'ÉCOUTEUR POUR L'AUTO-UPDATE ***
+                    input.addEventListener('change', updateAccueilPage);
+                    
+                    // Créer le label
+                    const label = document.createElement('label');
+                    label.htmlFor = inputId;
+                    label.className = 'ml-2 block text-sm text-gray-700 truncate';
+                    label.title = item;
+                    label.textContent = item;
+                    
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    
+                    container.appendChild(div);
+                });
+            };
+
+            fillFilterBox('filter-animal', categories.animal);
+            fillFilterBox('filter-type', categories.type); // AJOUT: Remplir le nouveau filtre
+            fillFilterBox('filter-marque', categories.marque);
+            fillFilterBox('filter-poids', categories.poids);
+            fillFilterBox('filter-magasin', categories.magasin);
+            fillFilterBox('filter-codeGold', categories.codeGold); // MODIFIÉ: Remplacement de 'article'
+            fillFilterBox('filter-statut', categories.statut);
+             fillFilterBox('filter-pays', categories.pays);
+            
+            console.log("Filtres remplis.");
+        }
+        
+        function resetFilters() {
+             document.getElementById('filter-periode').value = 'all';
+             document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+             // Vider les barres de recherche
+             document.querySelectorAll('.filter-search-input').forEach(input => input.value = '');
+             // Remettre à zéro l'affichage des filtres de recherche
+             document.querySelectorAll('.filter-content div.flex').forEach(item => item.style.display = 'flex');
+             
+             // NOUVEAU: Cacher et vider les champs de date personnalisés
+             const customDateDiv = document.getElementById('custom-date-range');
+             if (customDateDiv) customDateDiv.classList.add('hidden');
+             
+             const dateStartInput = document.getElementById('filter-date-start');
+             if (dateStartInput) dateStartInput.value = '';
+             
+             const dateEndInput = document.getElementById('filter-date-end');
+             if (dateEndInput) dateEndInput.value = '';
+             
+             console.log("Filtres réinitialisés.");
+        }
+
+        /**
+         * NOUVELLE FONCTION UTILITAIRE
+         * Récupère un objet contenant tous les filtres actifs.
+         */
+function getActiveFilters() {
+    const periodeValue = document.getElementById('filter-periode')?.value || 'all';
+
+    const getSelectedCheckboxes = (elementId) => {
+        const container = document.getElementById(elementId);
+        if (!container) return [];
+        const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+        return Array.from(checked).map(cb => cb.value);
+    };
+    
+return {
+    periode: periodeValue,
+    animals: getSelectedCheckboxes('filter-animal'),
+    types: getSelectedCheckboxes('filter-type'),
+    marques: getSelectedCheckboxes('filter-marque'),
+    poids: getSelectedCheckboxes('filter-poids'),
+    magasins: getSelectedCheckboxes('filter-magasin'),
+    codeGolds: getSelectedCheckboxes('filter-codeGold'),
+    statuts: getSelectedCheckboxes('filter-statut'),
+    pays: getSelectedCheckboxes('filter-pays'),
+};
+}
+
+
+        function getFilteredData() {
+            // 1. Obtenir les filtres
+            const filters = getActiveFilters();
+            const { startDate, endDate } = getDateRangeFromPeriode(filters.periode);
+        
+            // 3. Filtrer les données
+            const filteredData = allVentesData.filter(vente => {
+        
+                // A. Filtre de Date
+                // -> Si la période est "Depuis toujours" (all), on accepte même sans date
+                if (!vente.date) {
+                    if (filters.periode !== 'all') {
+                        // Pour les autres périodes (aujourd'hui, ce mois, etc.), on exclut les ventes sans date
+                        return false;
+                    }
+                } else {
+                    // Si on a une vraie date, on applique le filtre normal
+                    if (startDate && vente.date < startDate) return false;
+                    if (endDate && vente.date > endDate) return false;
+                }
+        
+                // B. Récupérer l'article (peut être undefined si inconnu)
+                const article = allArticlesData.get(vente.codeGold);
+        
+                // C. Déterminer le type de l'article
+                const isKnown = (vente.isKnownArticle === undefined)
+                    ? (article != null)
+                    : (vente.isKnownArticle === true);
+        
+                const articleMarque = article?.marque || '';
+                const is9plus1 = isKnown && articleMarque === '9+1';
+                const isAutre = isKnown && articleMarque !== '9+1';
+                const isUnknown = !isKnown;
+        
+                // D. Appliquer les filtres TYPE (9+1 / Autres / Code Inconnu)
+                if (filters.types.length > 0) {
+                    let matchesType = false;
+                    if (filters.types.includes('9+1') && is9plus1) matchesType = true;
+                    if (filters.types.includes('Autres') && isAutre) matchesType = true;
+                    if (filters.types.includes('Code Inconnu') && isUnknown) matchesType = true;
+                    if (!matchesType) return false;
+                }
+        
+                // E. Filtre ANIMAL
+                if (filters.animals.length > 0) {
+                    if (!article || !filters.animals.includes(article.animal)) return false;
+                }
+        
+                // F. Filtre MARQUE (hors 9+1)
+                if (filters.marques.length > 0) {
+                    if (!article || articleMarque === '9+1' || !filters.marques.includes(articleMarque)) return false;
+                }
+        
+                // G. Filtre POIDS
+                if (filters.poids.length > 0) {
+                    if (!article || !filters.poids.includes(article.poids)) return false;
+                }
+        
+                // H. Filtre MAGASIN
+                if (filters.magasins.length > 0) {
+                    if (!filters.magasins.includes(vente.nomMagasin)) return false;
+                }
+        
+                // I. Filtre CODE GOLD
+                if (filters.codeGolds.length > 0) {
+                    if (!filters.codeGolds.includes(vente.codeGold)) return false;
+                }
+if (filters.statuts.length > 0) {
+    if (!filters.statuts.includes(vente.statut)) return false;
+}
+// Filtre PAYS
+if (filters.pays.length > 0) {
+    if (!filters.pays.includes(vente.pays)) return false;
+}
+        // -------------------
+
+        return true;
+            });
+        
+            console.log(`Filtrage terminé: ${filteredData.length} / ${allVentesData.length} lignes.`);
+            return filteredData;
+        }
+
+        
+        function getDateRangeFromPeriode(periode) {
+            const now = new Date();
+            let startDate = null;
+            let endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59); 
+
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+            
+            switch (periode) {
+                case 'today':
+                    startDate = today;
+                    break;
+                case 'yesterday':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 1);
+                    endDate = new Date(today);
+                    endDate.setSeconds(endDate.getSeconds() - 1); 
+                    break;
+                case 'this-week':
+                    const firstDayOfWeek = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1); // Lundi
+                    startDate = new Date(today.getFullYear(), today.getMonth(), firstDayOfWeek);
+                    break;
+                case 'last-week':
+                    const firstDayOfLastWeek = new Date(today);
+                    firstDayOfLastWeek.setDate(today.getDate() - today.getDay() - 6);
+                    startDate = new Date(firstDayOfLastWeek.getFullYear(), firstDayOfLastWeek.getMonth(), firstDayOfLastWeek.getDate());
+                    
+                    const lastDayOfLastWeek = new Date(startDate);
+                    lastDayOfLastWeek.setDate(lastDayOfLastWeek.getDate() + 6);
+                    lastDayOfLastWeek.setHours(23, 59, 59);
+                    endDate = lastDayOfLastWeek;
+                    break;
+                case 'this-month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'last-month':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); 
+                    break;
+                case 'last-3-months':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+                    break;
+                case 'last-6-months':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+                    break;
+                case 'this-year':
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                case 'custom': // NOUVEAU CAS
+                    const dateStartStr = document.getElementById('filter-date-start')?.value;
+                    const dateEndStr = document.getElementById('filter-date-end')?.value;
+                    
+                    if (dateStartStr) {
+                        startDate = new Date(dateStartStr);
+                        startDate.setHours(0, 0, 0, 0); // Début du jour
+                    } else {
+                        startDate = null; // Pas de date de début
+                    }
+                    
+                    if (dateEndStr) {
+                        endDate = new Date(dateEndStr);
+                        endDate.setHours(23, 59, 59, 999); // Fin du jour
+                    } else {
+                        endDate = null; // Pas de date de fin
+                    }
+                    break;
+                case 'all':
+                default:
+                    startDate = null;
+                    endDate = null;
+            }
+            
+            return { startDate, endDate };
+        }
+
+        // NOUVEAU: Helper pour obtenir la date du Lundi de la semaine
+        function getWeekKey(date) {
+            const d = new Date(date);
+            const day = d.getDay(); // 0 = Dimanche, 1 = Lundi, ...
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Décalage pour Lundi
+            const monday = new Date(d.setDate(diff));
+            return monday.toISOString().substring(0, 10); // Clé 'YYYY-MM-DD'
+        }
+
+        // NOUVEAU: Helper pour formater la clé de date en fct de la granularité
+        function getDateKey(date, granularity) {
+            switch (granularity) {
+                case 'jour':
+                    return date.toISOString().substring(0, 10); // YYYY-MM-DD
+                case 'semaine':
+                    return getWeekKey(date); // YYYY-MM-DD (Lundi)
+                case 'mois':
+                default:
+                    return date.toISOString().substring(0, 7); // YYYY-MM
+            }
+        }
+
+        function updateKPIs(data) {
+             let totalHTVA = 0;
+             const magasins = new Set();
+             let nbArticles = 0;
+             // SUPPRIMÉ: unknownCount
+
+             data.forEach(vente => {
+                 const prix = Number(
+                     vente.prixHT ??
+                     vente.prix_ht ??
+                     vente.prix ??
+                     vente.montant ??
+                     0
+                 ) || 0;
+
+                 totalHTVA += prix;
+
+                 const magasinId = vente.nomMagasin || vente.codeMagasin || null;
+                 if (magasinId) {
+                     magasins.add(magasinId);
+                 }
+                 nbArticles += 1;
+             });
+
+             const totalEl = document.getElementById('kpi-total');
+             if (totalEl) {
+                 totalEl.textContent = `€${totalHTVA.toLocaleString('fr-FR', {
+                     minimumFractionDigits: 2,
+                     maximumFractionDigits: 2
+                 })}`;
+             }
+
+             const magasinsEl = document.getElementById('kpi-nb-magasins');
+             if (magasinsEl) {
+                 magasinsEl.textContent = magasins.size.toLocaleString('fr-FR');
+             }
+
+             const articlesEl = document.getElementById('kpi-nb-articles');
+             if (articlesEl) {
+                 articlesEl.textContent = nbArticles.toLocaleString('fr-FR');
+             }
+
+             // SUPPRIMÉ: Mise à jour du KPI des inconnus
+        }
+
+        // NOUVEAU: Fonction helper déplacée hors de updateCharts pour être réutilisable
+        const sortAggregatedData = (obj, topN = null) => {
+             let sorted = Object.entries(obj).sort(([, a], [, b]) => b - a);
+             if (topN) {
+                 sorted = sorted.slice(0, topN);
+             }
+             return {
+                 labels: sorted.map(([key]) => key),
+                 values: sorted.map(([, value]) => value)
+             };
+        };
+
+        // NOUVEAU: Logique d'agrégation extraite pour être réutilisable
+        function getAggregatedData(data) {
+            const animalCounts = {};
+            const marqueCounts = {};
+            const animalMontant = {};
+            const marqueMontant = {};
+            const evolutionAchats = {}; 
+            const evolutionArticles = {};
+            const codeGoldCounts = {};
+            const magasinCounts = {};
+            
+            const granularity = document.getElementById('select-evolution-montant')?.value || 'mois';
+
+            data.forEach(vente => {
+                const article = allArticlesData.get(vente.codeGold);
+                
+                codeGoldCounts[vente.codeGold] = (codeGoldCounts[vente.codeGold] || 0) + 1;
+                magasinCounts[vente.nomMagasin] = (magasinCounts[vente.nomMagasin] || 0) + 1;
+                
+                // CORRECTION: S'assurer que 'vente.date' existe AVANT d'essayer de le manipuler
+                if (vente.date) {
+                    const dateKey = getDateKey(vente.date, granularity); 
+                    evolutionAchats[dateKey] = (evolutionAchats[dateKey] || 0) + vente.prixHT;
+                    evolutionArticles[dateKey] = (evolutionArticles[dateKey] || 0) + 1;
+                }
+
+                if (!article) return; 
+
+                animalCounts[article.animal] = (animalCounts[article.animal] || 0) + 1;
+                marqueCounts[article.marque] = (marqueCounts[article.marque] || 0) + 1;
+                animalMontant[article.animal] = (animalMontant[article.animal] || 0) + vente.prixHT;
+                marqueMontant[article.marque] = (marqueMontant[article.marque] || 0) + vente.prixHT;
+            });
+            
+            return { animalCounts, marqueCounts, animalMontant, marqueMontant, evolutionAchats, evolutionArticles, codeGoldCounts, magasinCounts };
+        }
+
+        function updateCharts(data) {
+            Object.keys(chartInstances).forEach(key => {
+                if (chartInstances[key]) {
+                    chartInstances[key].destroy();
+                }
+            });
+            chartInstances = {};
+            
+            // NOUVEAU: Helper pour les % sur les graphiques camembert
+            const datalabelsPercentageConfig = {
+                plugins: {
+                    datalabels: {
+                        display: true,
+                        color: '#fff',
+                        font: { weight: 'bold' },
+                        formatter: (value, ctx) => {
+                            const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = (value * 100 / sum);
+                            // N'affiche pas le % si < 3% pour la lisibilité
+                            return percentage > 3 ? percentage.toFixed(1) + '%' : '';
+                        }
+                    }
+                }
+            };
+
+            // MODIFIÉ: Utilisation de la fonction d'agrégation
+            const aggregates = getAggregatedData(data);
+            const { 
+                animalCounts, marqueCounts, animalMontant, marqueMontant, 
+                evolutionAchats, evolutionArticles, codeGoldCounts, magasinCounts 
+            } = aggregates;
+            
+            // SUPPRIMÉ: Blocs de logique d'agrégation (déplacés vers getAggregatedData)
+            
+            // SUPPRIMÉ: Helper sortAggregatedData (déplacé hors de la fonction)
+            
+            // --- 1. Répartition par Animal (Doughnut + %) ---
+            const dataAnimalCounts = sortAggregatedData(animalCounts);
+            createChart('chart-repartition-animal', 'doughnut', {
+                labels: dataAnimalCounts.labels,
+                datasets: [{
+                    label: 'Nb. Articles',
+                    data: dataAnimalCounts.values,
+                    backgroundColor: [secondaryColor, primaryColor, '#FBBF24', '#3B82F6', '#EC4899', '#10B981', '#8B5CF6'], // MODIFIÉ: Inversion des 2 premières couleurs
+                }]
+            }, datalabelsPercentageConfig); // Ajout des %
+            
+            // --- 2. Top Marques (Nb) (Bar) ---
+            const topNMarques = document.getElementById('select-top-marques')?.value || 10;
+            const dataTopMarques = sortAggregatedData(marqueCounts, parseInt(topNMarques));
+            createChart('chart-top-marques', 'bar', {
+                labels: dataTopMarques.labels,
+                datasets: [{
+                    label: 'Nb. Articles',
+                    data: dataTopMarques.values,
+                    backgroundColor: primaryColor,
+                }]
+            });
+            
+            // --- 3. Montant par Animal (Doughnut + %) ---
+            const dataAnimalMontant = sortAggregatedData(animalMontant);
+            createChart('chart-montant-animal', 'doughnut', { // Modifié en 'doughnut'
+                labels: dataAnimalMontant.labels,
+                datasets: [{
+                    label: 'Total',
+                    data: dataAnimalMontant.values,
+                    backgroundColor: [secondaryColor, primaryColor, '#10B981', '#FBBF24', '#3B82F6', '#EC4899', '#8B5CF6'],
+                }]
+            }, datalabelsPercentageConfig); // Ajout des %
+
+            // --- 4. Top Montant par Marque (MODIFIÉ: Bar) ---
+            const topNMontantMarques = document.getElementById('select-top-montant-marques')?.value || 10;
+            
+            // MODIFIÉ: Utilisation de la logique simple "sortAggregatedData"
+            const dataTopMontantMarques = sortAggregatedData(marqueMontant, parseInt(topNMontantMarques));
+            
+            /* SUPPRIMÉ: Calcul pour "Top N + Autres" */
+
+            createChart('chart-top-montant-marques', 'bar', { // MODIFIÉ: 'bar'
+                labels: dataTopMontantMarques.labels, // MODIFIÉ
+                datasets: [{
+                    label: 'Total',
+                    data: dataTopMontantMarques.values, // MODIFIÉ: Données brutes
+                    backgroundColor: secondaryColor, // MODIFIÉ: Couleur verte
+                }]
+            }, { 
+                plugins: { datalabels: { display: false } } // MODIFIÉ: Supprime les %
+            });
+            
+            // --- NOUVEAU: Top Articles (Code Gold) (Bar) ---
+            const topNGold = document.getElementById('select-top-code-gold')?.value || 10;
+            const dataTopCodeGold = sortAggregatedData(codeGoldCounts, parseInt(topNGold));
+            
+            // Remplacer les codes par des libellés si possible
+            const dataTopCodeGoldLabels = dataTopCodeGold.labels.map(code => {
+                const article = allArticlesData.get(code);
+                if (article && article.libelle) {
+                    // Limiter la longueur du libellé pour l'affichage
+                    const libelle = article.libelle.length > 30 ? article.libelle.substring(0, 30) + '...' : article.libelle;
+                    return `${libelle} (${code})`; // ex: "Croquettes Chien (200378)"
+                }
+                return `Code Inconnu (${code})`; // ex: "Code Inconnu (555123)"
+            });
+
+            createChart('chart-top-code-gold', 'bar', {
+                labels: dataTopCodeGoldLabels,
+                datasets: [{
+                    label: 'Nb. Ventes',
+                    data: dataTopCodeGold.values,
+                    backgroundColor: primaryColor, // Couleur rouge
+                }]
+            }, { 
+                plugins: { datalabels: { display: false } } 
+            },
+            { type: 'codeGold', originalLabels: dataTopCodeGold.labels } // MODIFIÉ: Ajout du contexte de clic
+            );
+            
+            // --- NOUVEAU: Top Magasins (par nb. ventes) (Bar) ---
+            const topNMagasins = document.getElementById('select-top-magasins')?.value || 10;
+            const dataTopMagasins = sortAggregatedData(magasinCounts, parseInt(topNMagasins));
+
+            createChart('chart-top-magasins', 'bar', {
+                labels: dataTopMagasins.labels,
+                datasets: [{
+                    label: 'Nb. Ventes',
+                    data: dataTopMagasins.values,
+                    backgroundColor: secondaryColor, // Couleur verte
+                }]
+            }, { 
+                plugins: { datalabels: { display: false } } 
+            },
+            { type: 'magasin' } // MODIFIÉ: Ajout du contexte de clic
+            );
+            
+            // --- 7. Évolution des Achats (Line) ---
+            // CORRECTION: Trier les clés (dates) avant de créer le graphique
+            const sortedEvolutionKeys = Object.keys(evolutionAchats).sort();
+            createChart('chart-evolution-achats', 'line', {
+                labels: sortedEvolutionKeys, // Utiliser les clés triées
+                datasets: [{
+                    label: 'Total',
+                    data: sortedEvolutionKeys.map(key => evolutionAchats[key].toFixed(2)), // Mapper les valeurs dans l'ordre
+                    borderColor: primaryColor,
+                    backgroundColor: 'rgba(229, 106, 84, 0.1)',
+                    tension: 0.1,
+                    fill: true,
+                }]
+            }, { 
+                scales: { y: { beginAtZero: true } },
+                plugins: { datalabels: { display: false } } // S'assurer que les % sont désactivés ici
+            });
+            
+            // --- NOUVEAU: 8. Évolution des Articles (Line) ---
+            // CORRECTION: Trier les clés (dates) avant de créer le graphique
+            const sortedEvolutionArticlesKeys = Object.keys(evolutionArticles).sort();
+            createChart('chart-evolution-articles', 'line', {
+                labels: sortedEvolutionArticlesKeys, // Utiliser les clés triées
+                datasets: [{
+                    label: 'Nb. Articles',
+                    data: sortedEvolutionArticlesKeys.map(key => evolutionArticles[key]), // Mapper les valeurs dans l'ordre
+                    borderColor: secondaryColor, // Couleur verte
+                    backgroundColor: 'rgba(0, 89, 78, 0.1)', // Couleur verte (transparent)
+                    tension: 0.1,
+                    fill: true,
+                }]
+            }, { 
+                scales: { y: { beginAtZero: true } },
+                plugins: { datalabels: { display: false } } 
+            });
+        }
+        
+        function createChart(canvasId, type, data, options = {}, clickContext = null) { // MODIFIÉ: Ajout de clickContext
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) {
+                console.warn(`Canvas ID "${canvasId}" introuvable.`);
+                return;
+            }
+            
+            const defaultOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: (type === 'doughnut' || type === 'pie') ? 'bottom' : 'top',
+                    }
+                }
+            };
+            
+            // Fusionner les options par défaut et les options personnalisées
+            const finalOptions = { ...defaultOptions, ...options };
+            // Fusionner les plugins spécifiquement
+            finalOptions.plugins = { ...defaultOptions.plugins, ...options.plugins };
+            
+            // NOUVEAU: Ajout de l'événement onClick si le contexte est fourni
+            if (clickContext) {
+                finalOptions.onClick = (evt, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = data.labels[index];
+                        handleChartClick(label, index, clickContext);
+                    }
+                };
+                
+                // Rendre les barres interactives (curseur "pointer")
+                finalOptions.onHover = (event, chartElement) => {
+                    const canvas = event.native.target;
+                    canvas.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                };
+            }
+            
+            // CORRECTION: Restauration du contenu original du bloc try/catch
+            try {
+                 chartInstances[canvasId] = new Chart(ctx, {
+                    type: type,
+                    data: data,
+                    options: finalOptions // Utiliser les options fusionnées
+                });
+            } catch (e) {
+                console.error(`Erreur lors de la création du graphique "${canvasId}":`, e);
+            }
+            // FIN DE LA CORRECTION (le code de suppression a été enlevé)
+        }
+
+
+        function updateAccueilPage() {
+            // NOUVEAU: Message de débogage
+            console.log(`[Debug] updateAccueilPage exécuté avec ${allVentesData.length} lignes.`);
+            
+            if (!dbReady || allVentesData.length === 0) {
+                console.log("Données non prêtes ou vides, mise à jour annulée.");
+                // Idéalement, afficher un message "Aucune donnée"
+                return;
+            }
+
+            const filteredData = getFilteredData();
+            updateKPIs(filteredData);
+            updateCharts(filteredData);
+            
+            // Re-create icons (déplacé depuis le début de la fonction)
+            lucide.createIcons();
+        }
+        
+        /* CORRECTION: RÉINSERTION DES FONCTIONS MANQUANTES */
+        
+        /**
+         * NOUVEAU: Réinsertion de la fonction d'export Excel
+         */
+        function exportFilteredDataToExcel() {
+            console.log("Export Excel demandé...");
+            showLoading("Préparation de l'export Excel...");
+            
+            try {
+                const filteredVentes = getFilteredData();
+                
+                const dataToExport = filteredVentes.map(vente => {
+                    const article = allArticlesData.get(vente.codeGold) || {};
+                    // Assurer que la date est valide avant d'appeler toLocaleDateString
+                    const dateTicket = vente.date instanceof Date && !isNaN(vente.date)
+                        ? vente.date.toLocaleDateString('fr-FR')
+                        : 'Date inconnue';
+
+                    return {
+                        'Code Magasin': vente.codeMagasin,
+                        'Nom Magasin': vente.nomMagasin,
+                        'Date Ticket': dateTicket,
+                        'Numéro Ticket': vente.numTicket,
+                        'Code Gold': vente.codeGold,
+                        'Prix Achat': vente.prixHT,
+                        'Code Connu': (vente.isKnownArticle === false) ? 'Non' : 'Oui', 
+                        'Libellé Article': article.libelle,
+                        'Marque': article.marque,
+                        'Animal': article.animal,
+                        'Poids': article.poids,
+                    };
+                });
+                
+                if (dataToExport.length === 0) {
+                    showError("Aucune donnée à exporter pour les filtres sélectionnés.");
+                    hideLoading(); // Ne pas oublier de cacher le chargement
+                    return;
+                }
+
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Export Statistiques");
+                XLSX.writeFile(wb, "Export_Stats_9plus1.xlsx");
+                
+            } catch (error) {
+                console.error("Erreur lors de l'export Excel:", error);
+                showError("Une erreur est survenue lors de l'export.");
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        /**
+         * NOUVEAU: Insertion de la fonction updateAdminTable manquante
+         * Met à jour le tableau de gestion des données sur la page Admin
+         */
+        function updateAdminTable() {
+            const searchTerm = document.getElementById('search-data')?.value.toLowerCase() || '';
+            const tableBody = document.getElementById('data-management-table');
+            if (!tableBody) return;
+
+            // Trier par date, la plus récente en premier
+            const sortedVentes = [...allVentesData].sort((a, b) => {
+
+                const dateA = a.date || 0;
+                const dateB = b.date || 0;
+                return dateB - dateA;
+            });
+            
+            let filteredVentes = sortedVentes;
+            if (searchTerm) {
+                filteredVentes = sortedVentes.filter(v => 
+                    v.codeGold.toLowerCase().includes(searchTerm) ||
+                    (v.nomMagasin && v.nomMagasin.toLowerCase().includes(searchTerm)) || 
+                    (v.numTicket && v.numTicket.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Limiter à 100 lignes pour les perfs
+            const ventesToShow = filteredVentes.slice(0, 100);
+
+            if (ventesToShow.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Aucune donnée trouvée.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = ventesToShow.map(vente => {
+                const article = allArticlesData.get(vente.codeGold);
+                
+                // Gérer l'affichage des codes inconnus
+                let libelleDisplay, titleDisplay;
+                if (article) {
+                    libelleDisplay = article.libelle || 'N/A';
+                    titleDisplay = article.libelle || 'N/A';
+                } else {
+                    const isKnown = (vente.isKnownArticle === undefined) ? false : (vente.isKnownArticle === true);
+                    if (!isKnown) {
+                        libelleDisplay = '<span class="text-yellow-600 italic">Code Inconnu</span>';
+                        titleDisplay = 'Cet article n\'est pas dans la base de référence.';
+                    } else {
+                        libelleDisplay = '<span class="text-blue-600 italic">Article Connu (Manquant)</span>';
+                        titleDisplay = 'Article marqué comme connu, mais détails introuvables.';
+                    }
+                }
+                
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${vente.date ? vente.date.toLocaleDateString('fr-FR') : 'Date invalide'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${vente.nomMagasin || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">${vente.codeGold}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">€${(vente.prixHT || 0).toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs" title="${titleDisplay}">
+                            ${libelleDisplay}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-red-600 hover:text-red-900 btn-delete-vente" data-id="${vente.id}" title="Supprimer la ligne">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Re-lier les boutons poubelle
+            tableBody.querySelectorAll('.btn-delete-vente').forEach(btn => {
+                btn.addEventListener('click', handleDeleteVente);
+            });
+            
+            // Recréer les icônes
+            lucide.createIcons();
+        }
+        /* FIN DE L'INSERTION */
+
+        /* CORRECTION: Réinsertion de la fonction handleDeleteVente qui avait disparu */
+        /**
+         * Gère la suppression d'une ligne de vente
+         */
+        async function handleDeleteVente(e) {
+             const id = e.currentTarget.getAttribute('data-id');
+             if (!id) return;
+             
+             const button = e.currentTarget;
+             button.disabled = true;
+             
+             try {
+                console.log(`Suppression de: ${id}`);
+                
+                // --- MODIFICATION ---
+                // Ajout de encodeURIComponent() pour s'assurer que l'ID
+                // est transmis correctement dans l'URL, même s'il
+                // contient des caractères spéciaux.
+                const res = await fetch(`${apiBaseUrl}/api/ventes/${encodeURIComponent(id)}`, {
+                // --- FIN MODIFICATION ---
+                    method: 'DELETE',
+                    mode: 'cors'
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`Échec de la suppression (statut ${res.status})`);
+                }
+
+                console.log("Ligne supprimée.");
+                
+                // Mettre à jour manuellement le cache local et l'UI
+                // CORRECTION : Utilisation de '!=' au lieu de '!=='
+                // L'ID du bouton est une string, l'ID des données peut être un nombre.
+                // '!=' compare la valeur (ex: 7 != "7" est false), ce qui est correct.
+                allVentesData = allVentesData.filter(v => v.id != id);
+                // FIN DE LA CORRECTION
+                
+                updateAdminTable(); // Mettre à jour le tableau
+                
+                // Mettre à jour l'accueil si nécessaire
+                if (document.getElementById('accueil-container')) {
+                    populateFilters();
+                    updateAccueilPage();
+                }
+                
+             } catch (err) {
+                console.error("Erreur de suppression:", err);
+                showError("Erreur de suppression: " + err.message);
+                button.disabled = false;
+             }
+        }
+        /* FIN DE LA CORRECTION */
+
+
+        // SUPPRIMÉ: Fonction pour l'analyse Gemini (handleGeminiAnalysis)
+
+
+        function handleImportArticles() {
+            const fileInput = document.getElementById('import-articles');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError("Veuillez sélectionner un fichier d'articles (base.xlsx).");
+                return;
+            }
+            const file = fileInput.files[0];
+            showLoading(`Lecture du fichier "${file.name}"...`);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    const sheetName = "Counters";
+                    if (!workbook.SheetNames.includes(sheetName)) {
+                        throw new Error(`La feuille "${sheetName}" est introuvable dans le fichier.`);
+                    }
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (json.length < 2) {
+                        throw new Error("La feuille 'Counters' est vide.");
+                    }
+                    
+                    let headerRowIndex = -1;
+                    for (let i = 0; i < json.length; i++) {
+                        if (json[i].includes("GOLD") && json[i].includes("Marque")) {
+                            headerRowIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (headerRowIndex === -1) {
+                        throw new Error("Impossible de trouver la ligne d'en-tête correcte (contenant 'GOLD', 'Marque') dans l'onglet 'Counters'.");
+                    }
+                    
+                    const headers = json[headerRowIndex];
+                    const dataRows = json.slice(headerRowIndex + 1);
+
+                    const colIndices = {
+                        gold: headers.indexOf('GOLD'), // E
+                        libelle: headers.indexOf('Libellé caisse FR'), // G
+                        marque: headers.indexOf('Marque'), // I
+                        animal: headers.indexOf('Category Description'), // L
+                        poids: headers.indexOf('SKU Net Content'), // M
+                    };
+
+                    for (const [key, index] of Object.entries(colIndices)) {
+                        if (index === -1) {
+                            throw new Error(`Colonne requise introuvable: "${key}"`);
+                        }
+                    }
+
+                    const articlesToUpload = [];
+                    dataRows.forEach(row => {
+                        const codeGold = row[colIndices.gold]?.toString().trim();
+                        if (!codeGold) return; 
+
+                        articlesToUpload.push({
+                            codeGold: codeGold,
+                            libelle: row[colIndices.libelle]?.toString().trim() || 'N/A',
+                            marque: row[colIndices.marque]?.toString().trim() || 'N/A',
+                            animal: row[colIndices.animal]?.toString().trim() || 'N/A',
+                            poids: row[colIndices.poids]?.toString().trim() || 'N/A',
+                        });
+                    });
+
+                    if (articlesToUpload.length === 0) {
+                        throw new Error("Aucun article valide n'a été trouvé dans le fichier.");
+                    }
+                    
+                    // --- MODIFIÉ: Passage au mode "Progression" (REMPLACÉ) ---
+                    const totalItems = articlesToUpload.length;
+                    showLoading(`Importation de ${totalItems.toLocaleString('fr-FR')} articles...`, true);
+                    updateLoadingProgress(0, `0 / ${totalItems.toLocaleString('fr-FR')} importés`);
+                    
+                    let totalCount = 0;
+
+                    for (const article of articlesToUpload) {
+                        // On suppose que POST /api/articles gère l'UPSERT
+                        const res = await fetch(`${apiBaseUrl}/api/articles`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(article),
+                            mode: 'cors' // AJOUTÉ
+                        });
+                        
+                        if (!res.ok) {
+                            console.warn(`Échec de l'import pour l'article ${article.codeGold}`);
+                        }
+
+                        totalCount++;
+
+                        if (totalCount % 20 === 0 || totalCount === totalItems) {
+                            const percentage = Math.round((totalCount / totalItems) * 100);
+                            updateLoadingProgress(percentage, `${totalCount.toLocaleString('fr-FR')} / ${totalItems.toLocaleString('fr-FR')} importés`);
+                        }
+                    }
+                    // --- FIN DE LA MODIFICATION ---
+
+                    // Petit délai pour voir 100%
+                    setTimeout(async () => { // Ajout de async ici
+                        hideLoading();
+                        showSuccess(`${totalItems} articles ont été importés ou mis à jour.`);
+                        fileInput.value = ''; 
+                        
+                        // Recharger les données (placé ici)
+                        await loadInitialData();
+                    }, 500);
+                    
+                    // (Déplacé dans le setTimeout)
+                    
+                } catch (error) {
+                    console.error("Erreur lors de l'import des articles:", error);
+                    showError(`Erreur d'importation (Articles): ${error.message}`);
+                    hideLoading(); // AJOUTÉ : Cacher la modale en cas d'erreur
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleImportVentes() {
+            const fileInput = document.getElementById('import-ventes');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError("Veuillez sélectionner un fichier de ventes.");
+                return;
+            }
+            if (allArticlesData.size === 0) {
+                 showError("Veuillez importer la base d'articles (Étape 1) AVANT d'importer les ventes.");
+                 return;
+            }
+            
+            const file = fileInput.files[0];
+            showLoading(`Lecture du fichier de ventes "${file.name}"...`);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) throw new Error("Le fichier de ventes est vide.");
+                    
+                   showLoading(`Analyse de ${json.length} lignes...`);
+                   
+                   preparedVentesData = []; 
+                   let validFormatCount = 0;
+                   let knownCount = 0;
+                   let unknownCount = 0;
+ 
+                   for (const row of json) {
+                        const codeMagasin = row['GP_ETABLISSEMENT']?.toString().trim();
+                        const datePiece = row['GP_DATEPIECE'];
+                        const numTicket = row['GP_NUMERO']?.toString().trim();
+                        const codeGold = row['GL_CODEARTICLE']?.toString().trim();
+                        const prixHT = parseFloat(row['GL_PUHT']);
+
+                        // --- ENCODAGE DU "TRANSPORTEUR" ---
+                        const rawType = row['ET_TYPEETAB']?.toString().trim() || ''; 
+                        const rawPays = row['ET_PAYS']?.toString().trim() || ''; 
+                        let rawNom = row['ET_LIBELLE']?.toString().trim() || 'Nom Inconnu';
+
+                        // Traductions
+                        let labelStatut = 'Autre';
+                        if (rawType.toUpperCase() === 'FRA') labelStatut = 'Franchisé';
+                        if (rawType.toUpperCase() === 'SUC') labelStatut = 'Intégré';
+
+                        let labelPays = 'Autre';
+                        if (rawPays === 'FRA') labelPays = 'France';
+                        if (rawPays === 'BEL') labelPays = 'Belgique';
+                        if (rawPays === 'LUX') labelPays = 'Luxembourg';
+
+                        // ON CACHE TOUT DANS LE NOM avec "|||"
+                        const nomMagasinComplet = `${rawNom}|||${labelStatut}|||${labelPays}`;
+
+                        if (!codeMagasin || !datePiece || !numTicket || !codeGold || isNaN(prixHT)) continue;
+                            
+                        validFormatCount++; 
+                        const isKnown = allArticlesData.has(codeGold);
+                        if (isKnown) knownCount++; else unknownCount++;
+                            
+                        const uniqueId = `${codeMagasin}-${datePiece.toISOString()}-${numTicket}-${codeGold}`;
+
+                        preparedVentesData.push({
+                            id: uniqueId,
+                            codeMagasin: codeMagasin,
+                            nomMagasin: nomMagasinComplet, // C'est ici qu'on envoie le nom codé
+                            date: datePiece,
+                            numTicket: numTicket,
+                            codeGold: codeGold,
+                            prixHT: prixHT,
+                            isKnownArticle: isKnown
+                        });
+                    }
+                   
+                   // Affichage de l'aperçu
+                   document.getElementById('preview-total').textContent = json.length.toLocaleString('fr-FR');
+                   document.getElementById('preview-valid').textContent = validFormatCount.toLocaleString('fr-FR');
+                   document.getElementById('preview-known').textContent = knownCount.toLocaleString('fr-FR');
+                   document.getElementById('preview-unknown').textContent = unknownCount.toLocaleString('fr-FR');
+                   document.getElementById('import-preview-modal').classList.remove('hidden');
+
+                } catch (error) {
+                    console.error("Erreur lors de l'import des ventes:", error);
+                    showError(`Erreur d'importation (Ventes): ${error.message}`);
+                    hideLoading(); 
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+       // NOUVELLE FONCTION: Sépare le contrôle des doublons et l'upload
+       async function checkDuplicatesAndUpload() {
+           const fileInput = document.getElementById('import-ventes');
+           
+           try {
+               showLoading(`Vérification des doublons pour ${preparedVentesData.length} lignes...`);
+               
+               const existingIds = new Set(allVentesData.map(v => v.id));
+               
+               duplicateData = [];
+               nonDuplicateData = [];
+               
+               preparedVentesData.forEach(vente => {
+                   if (existingIds.has(vente.id)) {
+                       duplicateData.push(vente);
+                   } else {
+                       nonDuplicateData.push(vente);
+                   }
+               });
+               
+               if (duplicateData.length > 0) {
+                   hideLoading();
+                   showDuplicateModal(duplicateData.length);
+               } else {
+                   await uploadData(nonDuplicateData, []);
+                   if(fileInput) fileInput.value = ''; 
+                   preparedVentesData = []; // Vider
+               }
+           } catch (error) {
+               console.error("Erreur lors de la vérification des doublons:", error);
+               showError(`Erreur: ${error.message}`);
+               hideLoading();
+           } finally {
+               // Vider le cache de préparation même en cas d'erreur de doublon
+               if (duplicateData.length === 0) {
+                   preparedVentesData = [];
+               }
+           }
+       }
+       
+        async function processDuplicates(action) {
+            const fileInput = document.getElementById('import-ventes');
+            hideDuplicateModal();
+            
+            let dataToUpload = nonDuplicateData;
+            
+            switch (action) {
+                case 'skip':
+                    console.log(`Doublons: ${duplicateData.length} lignes ignorées.`);
+                    break;
+                case 'replace':
+                    console.log(`Doublons: ${duplicateData.length} lignes vont être remplacées.`);
+                    dataToUpload = dataToUpload.concat(duplicateData); // Remplacer = setDoc (UPSERT)
+                    break;
+                case 'cancel':
+                default:
+                    console.log("Importation annulée.");
+                    duplicateData = [];
+                    nonDuplicateData = [];
+                    if(fileInput) fileInput.value = '';
+                    return;
+            }
+            
+            await uploadData(dataToUpload, []); 
+            duplicateData = [];
+            nonDuplicateData = [];
+            preparedVentesData = []; // Vider le cache de préparation
+            if(fileInput) fileInput.value = '';
+        }
+ 
+        async function uploadData(dataToSet, dataToUpdate = []) {
+            // dataToUpdate n'est pas géré, on se concentre sur dataToSet
+            const totalItems = dataToSet.length;
+            
+            if (totalItems === 0) {
+                console.log("uploadData: 0 items à importer.");
+                // Afficher un succès si l'import était partiel (doublons sautés)
+                if (duplicateData.length > 0) { // On vérifie l'état global
+                    showSuccess(`Succès ! ${totalItems} nouvelles lignes importées. ${duplicateData.length} doublons ignorés.`);
+                }
+                return;
+            }
+
+            showLoading("Importation...", true);
+            updateLoadingProgress(0, `0 / ${totalItems.toLocaleString('fr-FR')} importés`);
+
+            try {
+                let totalCount = 0;
+                
+                // On suppose que POST /api/ventes gère l'UPSERT (via l'ID dans le body)
+                // pour que la logique "Remplacer" (gestion des doublons) fonctionne.
+                for (const item of dataToSet) {
+                    // 'importedAt' a été retiré de 'handleImportVentes',
+                    // donc 'item' est prêt à être envoyé.
+                    const res = await fetch(`${apiBaseUrl}/api/ventes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item),
+                        mode: 'cors' // AJOUTÉ
+                    });
+
+                    if (!res.ok) {
+                        console.warn(`Échec de l'import pour la vente ${item.id}`);
+                    }
+                    
+                    totalCount++;
+
+                    // Mettre à jour la progression
+                    if (totalCount % 20 === 0 || totalCount === totalItems) {
+                        const percentage = Math.round((totalCount / totalItems) * 100);
+                        updateLoadingProgress(percentage, `${totalCount.toLocaleString('fr-FR')} / ${totalItems.toLocaleString('fr-FR')} importés`);
+                    }
+                }
+
+                // Petit délai pour que l'utilisateur voie 100%
+                setTimeout(async () => {
+                    hideLoading();
+                    showSuccess(`Succès ! ${totalItems} lignes de ventes ont été importées/mises à jour.`);
+                    // Recharger les données pour tout rafraîchir (puisque onSnapshot est parti)
+                    await loadInitialData();
+                }, 500);
+            
+let nomBrut = data.nomMagasin || '';
+    let finalNom = nomBrut;
+    let finalStatut = 'Autre';
+    let finalPays = 'Autre';
+
+if (nomBrut.includes('|||')) {
+        const parts = nomBrut.split('|||');
+        finalNom = parts[0];    // Le vrai nom (ex: Tom&Co)
+        finalStatut = parts[1]; // Le statut (ex: Franchisé)
+        finalPays = parts[2];   // Le pays (ex: Belgique)
+    }
+
+const vente = {
+        ...data,
+        dateVente: rawDate,
+        date: parsedDate,
+        prixHT,
+        
+        // On remplace par les valeurs propres pour l'affichage
+        nomMagasin: finalNom, 
+        statut: finalStatut, // Sera utilisé par populateFilters
+        pays: finalPays      // Sera utilisé par populateFilters
+    };
+
+            } catch (error) {
+                console.error("Erreur lors de l'upload des données:", error);
+                showError(`Erreur d'upload: ${error.message}`);
+                hideLoading();
+            }
+        }
+
+
+        // *** CORRECTION: AJOUT DE LA FONCTION MANQUANTE ***
+/**
+         * Valide les champs de confirmation de la modale de réinitialisation
+         * et active/désactive le bouton de confirmation.
+         */
+        function validateResetConfirmation() {
+            const confirm1 = document.getElementById('reset-db-confirm-1');
+            const confirm2 = document.getElementById('reset-db-confirm-2');
+            const confirmBtn = document.getElementById('btn-confirm-reset-db');
+
+            if (!confirm1 || !confirm2 || !confirmBtn) return;
+
+            const isChecked = confirm1.checked;
+            const isTyped = (confirm2.value === 'SUPPRIMER');
+
+            if (isChecked && isTyped) {
+                confirmBtn.disabled = false;
+            } else {
+                confirmBtn.disabled = true;
+            }
+        }
+        
+        // =====================================================================
+        // POINT D'ENTRÉE PRINCIPAL
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // NOUVEAU: Enregistrer le plugin de datalabels
+            Chart.register(ChartDataLabels);
+            // NOUVEAU: Désactiver les datalabels par défaut (on les activera par graphique)
+            Chart.defaults.plugins.datalabels.display = false;
+            
+            // Configuration globale de Chart.js pour le mode sombre
+            Chart.defaults.color = '#334155'; // Couleur du texte (slate-700)
+            
+            lucide.createIcons();
+
+            // Écouteurs de la Navbar
+            document.getElementById('nav-accueil').addEventListener('click', (e) => { e.preventDefault(); navigateTo('accueil'); });
+            document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); navigateTo('admin'); });
+            document.getElementById('nav-mobile-accueil').addEventListener('click', (e) => { e.preventDefault(); navigateTo('accueil'); });
+            document.getElementById('nav-mobile-admin').addEventListener('click', (e) => { e.preventDefault(); navigateTo('admin'); });
+
+            // Écouteur pour le bouton du menu Hamburger
+            document.getElementById('mobile-menu-button').addEventListener('click', function() {
+                const mobileMenu = document.getElementById('mobile-menu');
+                const isOpen = !mobileMenu.classList.contains('hidden');
+                mobileMenu.classList.toggle('hidden');
+                this.querySelector('svg.block').classList.toggle('hidden', !isOpen);
+                this.querySelector('svg.hidden').classList.toggle('hidden', isOpen);
+            });
+            
+            // Écouteurs pour les modales
+            document.getElementById('close-error-modal')?.addEventListener('click', hideError);
+            document.getElementById('btn-error-ok')?.addEventListener('click', hideError);
+
+            // AJOUT: Écouteurs pour la nouvelle modale d'export
+            document.getElementById('close-export-modal')?.addEventListener('click', hideExportModal);
+            document.getElementById('btn-cancel-export')?.addEventListener('click', hideExportModal);
+            document.getElementById('btn-confirm-export')?.addEventListener('click', () => {
+                hideExportModal();
+                exportFilteredDataToExcel(); // Appelle la fonction d'export réelle
+            });
+
+           // NOUVEAU: Écouteurs pour la modale d'aperçu d'import
+           document.getElementById('close-import-preview-modal')?.addEventListener('click', () => {
+               document.getElementById('import-preview-modal').classList.add('hidden');
+               preparedVentesData = []; // Vider
+           });
+           document.getElementById('btn-cancel-import-preview')?.addEventListener('click', () => {
+                document.getElementById('import-preview-modal').classList.add('hidden');
+                preparedVentesData = []; // Vider
+           });
+            // CORRECTION: Ajout de la fermeture '});' manquante
+            document.getElementById('btn-confirm-import-preview')?.addEventListener('click', () => {
+                 document.getElementById('import-preview-modal').classList.add('hidden');
+                 checkDuplicatesAndUpload();
+            });
+            
+            // SUPPRIMÉ: Écouteur pour la modale Gemini
+            // document.getElementById('close-gemini-modal')?.addEventListener('click', hideGeminiModal);
+            // CORRECTION: Suppression de la ligne fantôme
+            // document.getElementById('btn-ok-gemini-modal')?.removeEventListener('click', hideGeminiModal); // SUPPRIMÉ
+
+            // NOUVEAU: Écouteurs pour la modale de réinitialisation
+            document.getElementById('close-reset-db-modal')?.addEventListener('click', hideResetDbModal);
+            document.getElementById('btn-cancel-reset-db')?.addEventListener('click', hideResetDbModal);
+            document.getElementById('btn-confirm-reset-db')?.addEventListener('click', handleResetDatabase);
+            // Écouteurs pour les 2 vérifications
+            document.getElementById('reset-db-confirm-1')?.addEventListener('input', validateResetConfirmation);
+            document.getElementById('reset-db-confirm-2')?.addEventListener('input', validateResetConfirmation);
+
+            // NOUVEAU: Écouteurs pour la modale de détail des statistiques
+            document.getElementById('close-stat-detail-modal')?.addEventListener('click', hideStatDetailModal);
+            document.getElementById('btn-ok-stat-detail')?.addEventListener('click', hideStatDetailModal);
+
+            // NOUVEAU: Écouteurs pour la modale Gemini
+            document.getElementById('close-gemini-modal')?.addEventListener('click', hideGeminiModal);
+            document.getElementById('btn-ok-gemini-modal')?.addEventListener('click', hideGeminiModal);
+            
+            // NOUVEAU: Écouteur de clic pour le filtre IA (par délégation)
+            document.getElementById('gemini-analysis-modal')?.addEventListener('click', (e) => {
+                if (e.target.classList.contains('ai-filter-trigger')) {
+                    applyAiFilter();
+                }
+            });
+
+            // SUPPRIMÉ: Écouteurs pour le panneau de filtres (logique déplacée dans initAccueilPage)
+            
+            // Initialiser l'application (REMPLACÉ)
+            initApp();
+        });
+    </script>
+</body>
+</html>
